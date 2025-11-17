@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Leaf, ArrowRight } from 'lucide-react';
-import { useAuth } from "../../auth/authContext/AuthorContext.jsx";
+import { useAuth } from "../../auth/authContext/AuthorContext.jsx"; 
+import { useNavigate } from 'react-router-dom'; 
 
-// src/assets/common/signup/SignUpPage.jsx
 
 const SignUpPage = () => {
-  // 2. onLogin prop 대신 useAuth 훅 사용
+  const navigate = useNavigate(); 
   const { handleLogin, handleAdminLogin } = useAuth();
+  
+  // 회원가입 페이지로 이동 핸들러
+  const handleRegisterClick = (e) => {
+    e.preventDefault(); 
+    navigate('/register'); 
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -31,6 +37,7 @@ const SignUpPage = () => {
           현재는 버튼 클릭으로 임시 로그인합니다.
         */}
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          {/* 이메일 입력 */}
           <div>
             <label 
               htmlFor="email" 
@@ -46,9 +53,11 @@ const SignUpPage = () => {
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               placeholder="you@example.com"
+              // onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
+          {/* 비밀번호 입력 */}
           <div>
             <label 
               htmlFor="password" 
@@ -64,6 +73,7 @@ const SignUpPage = () => {
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               placeholder="••••••••"
+              // onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
@@ -88,8 +98,8 @@ const SignUpPage = () => {
 
           {/* 일반 로그인 버튼 */}
           <button
-            type="button" // 3. form의 submit 대신 onClick으로 처리
-            onClick={handleLogin} // 4. onLogin(false) -> handleLogin
+            type="button" 
+            onClick={handleLogin} 
             className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-lg shadow-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 font-bold transition-all"
           >
             로그인
@@ -98,8 +108,8 @@ const SignUpPage = () => {
           
           {/* 테스트용 관리자 로그인 버튼 */}
           <button
-            type="button" // 5. form의 submit 대신 onClick으로 처리
-            onClick={handleAdminLogin} // 6. onLogin(true) -> handleAdminLogin
+            type="button" 
+            onClick={handleAdminLogin}
             className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-medium transition-all"
           >
             (테스트용) 관리자 로그인
@@ -108,7 +118,11 @@ const SignUpPage = () => {
 
         <p className="mt-8 text-center text-sm text-gray-500">
           계정이 없으신가요?{' '}
-          <a href="#" className="font-medium text-emerald-600 hover:text-emerald-500">
+          <a 
+            href="#" 
+            onClick={handleRegisterClick} 
+            className="font-medium text-emerald-600 hover:text-emerald-500 cursor-pointer"
+          >
             회원가입
           </a>
         </p>

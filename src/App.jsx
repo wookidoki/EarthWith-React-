@@ -20,7 +20,10 @@ import MainLayout from "./assets/main/MainLayout.jsx";
 import BoardMagenment from "./assets/admin/BoardMagenment.jsx";       
 import ScoreMagenment from "./assets/admin/ScoreMagenment.jsx";       
 import Statis from "./assets/admin/Statis.jsx";                       
-import ErrorPage from "./assets/util/error/Error.jsx";          
+import ErrorPage from "./assets/util/error/Error.jsx";
+
+//
+import RegisterPage from "./assets/common/signup/EnrollForm.jsx";
 
 // 메인 App 컴포넌트 
 function App() {
@@ -111,6 +114,8 @@ function App() {
         <Route path="/admin/stats" element={<Statis />} />                {/* 통계 대시보드 */}
 
       </Route>
+
+      <Route path="/register" element={<RegisterPage />} /> 
       
       {/* 3. 일치하는 경로가 없을 때 (ErrorPage로 연결) */}
       <Route path="*" element={<ErrorPage onNavigate={handleNavigate} />} /> 
