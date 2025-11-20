@@ -1,22 +1,26 @@
-import React, { useState, useMemo, useEffect } from 'react'; // 1. useEffect 임포트
-import { useNavigate } from 'react-router-dom'; // 2. onNavigate prop 대신 사용
-import { useAuth } from "../auth/authContext/AuthorContext.jsx";
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+// import { useAuth } from "../auth/authContext/AuthorContext.jsx"; // 경로가 확실해지면 주석 해제하세요.
 import {
   PlusSquare, Search, ChevronRight, Eye, Droplet, Sun, Car,
-  ShoppingBag, Users, BookOpen
+  ShoppingBag, Users, BookOpen, FileText
 } from 'lucide-react';
 
-// src/assets/board/BoardPage.jsx
+// 임시 인증 훅 
+const useAuth = () => {
+  return { isAdmin: true };
+};
 
-// 임시 게시물 데이터 (A, B 카테고리 혼합)
-const MOCK_POSTS_DATA = [
-  { id: 1, title: '서울시, 친환경 에너지 보급 확대 정책 발표', category: '#A1 공공', date: '1일 전', views: 1204, icon: Sun, color: 'text-orange-500', img: 'https://placehold.co/600x400/f97316/white?text=에너지' },
-  { id: 2, title: '겨울철 에너지 절약 캠페인 자원봉사자 모집', category: '#B2 모집', date: '2일 전', views: 876, icon: Users, color: 'text-blue-500', img: 'https://placehold.co/600x400/3b82f6/white?text=모집' },
-  { id: 3, title: '전기차 보조금 개편안 상세 안내 (2026년)', category: '#A3 자동차', date: '2일 전', views: 2300, icon: Car, color: 'text-blue-600', img: 'https://placehold.co/600x400/2563eb/white?text=자동차' },
-  { id: 4, title: '올바른 분리수거 가이드라인 v3.0 배포', category: '#B1 정보', date: '3일 전', views: 952, icon: Droplet, color: 'text-cyan-500', img: 'https://placehold.co/600x400/06b6d4/white?text=정보' },
-  { id: 5, title: '‘용기내 챌린지’가 바꾼 우리 동네 가게들', category: '#A5 녹색소비', date: '4일 전', views: 1840, icon: ShoppingBag, color: 'text-green-500', img: 'https://placehold.co/600x400/22c55e/white?text=녹색소비' },
-  { id: 6, title: '지역별 탄소중립포인트 우수 참여 사례집 배포', category: '#B1 정보', date: '5일 전', views: 730, icon: BookOpen, color: 'text-indigo-500', img: 'https://placehold.co/600x400/6366f1/white?text=정보' },
-];
+// 1. 카테고리별 스타일 매핑 헬퍼 함수 (UI 표현용)
+const getCategoryStyle = (categoryCode) => {
+  if (categoryCode?.startsWith('A1')) return { icon: Sun, color: 'text-orange-500', bg: 'bg-orange-100' };
+  if (categoryCode?.startsWith('A3')) return { icon: Car, color: 'text-blue-600', bg: 'bg-blue-100' };
+  if (categoryCode?.startsWith('A5')) return { icon: ShoppingBag, color: 'text-green-500', bg: 'bg-green-100' };
+  if (categoryCode?.startsWith('B2')) return { icon: Users, color: 'text-blue-500', bg: 'bg-blue-100' };
+  if (categoryCode?.startsWith('B1')) return { icon: BookOpen, color: 'text-indigo-500', bg: 'bg-indigo-100' };
+  
+  return { icon: FileText, color: 'text-gray-500', bg: 'bg-gray-100' };
+};
 
 const parseCategoryTag = (categoryStr) => {
   if (!categoryStr) return '기타';
@@ -24,39 +28,70 @@ const parseCategoryTag = (categoryStr) => {
   return parts.length > 1 ? parts[1] : categoryStr;
 };
 
-const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
-  const navigate = useNavigate(); // 5. useNavigate 훅 사용
-  const { isAdmin } = useAuth(); // 6. useAuth 훅으로 isAdmin 상태 가져오기
-
-  const [allPostsData, setAllPostsData] = useState([]); // 7. 데이터 상태화
-  const [loading, setLoading] = useState(true); // 8. 로딩 상태 추가
-
+const BoardPage = ({ pageFilter }) => {
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const [allPostsData, setAllPostsData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
 
-  // ⭐ 상세 페이지 이동 핸들러
+  // 상세 페이지 이동 핸들러
   const handlePostClick = (postId) => {
     navigate(`/board-detail/${postId}`);
   };
 
-  // 9. TODO: (AXIOS) 컴포넌트 마운트 시 API로 게시물 데이터 가져오기
+  // API 및 데이터 호출
   useEffect(() => {
-    // API 호출 시뮬레이션
-    setLoading(true);
-    setTimeout(() => {
-      setAllPostsData(MOCK_POSTS_DATA);
-      setLoading(false);
-    }, 500); // 0.5초 딜레이
-    
-  }, []); // 빈 배열: 마운트 시 1회 실행
+    const API_BASE_URL = 'http://localhost:8081'; 
 
-  // --- 데이터 필터링 로직 (useMemo로 최적화) ---
+    const fetchBoards = async () => {
+      setLoading(true);
+      try {
+        const [response] = await Promise.all([
+          fetch(`${API_BASE_URL}/boards`)
+        ]);
+        if (!response.ok) {
+          throw new Error('API 인증 오류');
+        }
+
+        const boardList = await response.json();
+
+        // DB 데이터를 프론트엔드  형식으로 변환
+        const transformedData = boardList.map(item => {
+          const style = getCategoryStyle(item.boardCategory);
+          return {
+            id: item.boardNo,
+            title: item.boardTitle,
+            category: item.boardCategory || '기타',
+            date: item.regDate,
+            views: item.viewCount,
+            likeCount: item.likeCount,
+            icon: style.icon,
+            color: style.color,
+            // 이미지가 없으면 placeholder 사용
+            img: `https://placehold.co/600x400/e2e8f0/1e293b?text=${encodeURIComponent(item.boardTitle ? item.boardTitle.substring(0, 4) : 'Eco')}`
+          };
+        });
+
+        setAllPostsData(transformedData);
+
+      } catch (error) {
+        console.error("게시글 로딩 실패:", error);
+        setAllPostsData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBoards();
+  }, []);
 
   // 1. 고유 카테고리 목록 생성 (필터 버튼용)
   const uniqueCategories = useMemo(() => {
     const relevantPosts = allPostsData.filter(post => {
-      if (pageFilter === 'ALL') return post.category.startsWith('#A') || post.category.startsWith('#B');
-      if (pageFilter === 'A') return post.category.startsWith('#A');
+      if (pageFilter === 'ALL') return true;
+      if (pageFilter === 'A') return post.category.startsWith('A'); // DB 데이터 기준 필터링
       return false;
     });
 
@@ -64,17 +99,13 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
       .map(post => parseCategoryTag(post.category))
       .filter((value, index, self) => self.indexOf(value) === index);
     return ['전체', ...categories.sort()];
-  }, [pageFilter, allPostsData]); // 10. allPostsData 의존성 추가
+  }, [pageFilter, allPostsData]);
 
   // 2. prop, 카테고리, 검색어에 따라 필터링된 게시물 데이터 생성
   const filteredPosts = useMemo(() => {
     const propFiltered = allPostsData.filter(post => {
-      if (pageFilter === 'ALL') {
-        return post.category.startsWith('#A') || post.category.startsWith('#B');
-      }
-      if (pageFilter === 'A') {
-        return post.category.startsWith('#A');
-      }
+      if (pageFilter === 'ALL') return true;
+      if (pageFilter === 'A') return post.category.startsWith('A');
       return false;
     });
 
@@ -88,7 +119,7 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
     );
 
     return searchFiltered;
-  }, [pageFilter, selectedCategory, searchTerm, allPostsData]); // 11. allPostsData 의존성 추가
+  }, [pageFilter, selectedCategory, searchTerm, allPostsData]);
 
   const pageTitle = pageFilter === 'A' ? '관리자 게시물' : '전체 게시물';
   const pageDescription = pageFilter === 'A'
@@ -98,7 +129,7 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
   const bentoPosts = filteredPosts.slice(0, 4);
   const listPosts = filteredPosts.slice(4);
 
-  // 12. 로딩 중 UI
+  // 로딩 중 UI
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pb-28 flex justify-center items-center">
@@ -109,17 +140,16 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
-      {/* 헤더 (MainLayout으로 이동) */}
-      <header className="bg-white sticky top-20 z-30 border-b border-gray-200"> {/* 13. top-20 (헤더 높이만큼) */}
+      {/* 헤더 */}
+      <header className="bg-white sticky top-20 z-30 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{pageTitle}</h1>
             <p className="text-gray-500 mt-1">{pageDescription}</p>
           </div>
-          {/* 관리자일 때만 '새 글 작성' 버튼 표시 */}
           {isAdmin && (
             <button
-              onClick={() => navigate('/admin-enroll')} // 14. onNavigate -> navigate (절대경로)
+              onClick={() => navigate('/admin-enroll')}
               className="flex items-center space-x-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/30"
             >
               <PlusSquare className="w-5 h-5" />
@@ -170,14 +200,14 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
         {bentoPosts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             {/* 첫 번째 (가장 큰) 게시물 */}
-            <div 
-              onClick={() => handlePostClick(bentoPosts[0].id)} // ⭐ 클릭 이벤트 연결
+            <div
+              onClick={() => handlePostClick(bentoPosts[0].id)}
               className="md:col-span-1 md:row-span-2 bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
             >
               <div className="relative w-full h-64 rounded-xl overflow-hidden mb-5">
                 <img src={bentoPosts[0].img} alt={bentoPosts[0].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold ${bentoPosts[0].color.replace('text-', 'bg-').replace('500', '100')} ${bentoPosts[0].color}`}>
-                  {bentoPosts[0].category}
+                  {parseCategoryTag(bentoPosts[0].category)}
                 </span>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-snug group-hover:text-emerald-600 transition-colors">
@@ -194,9 +224,9 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
 
             {/* 나머지 벤토 게시물 */}
             {bentoPosts.slice(1, 4).map((post) => (
-              <div 
-                key={post.id} 
-                onClick={() => handlePostClick(post.id)} // ⭐ 클릭 이벤트 연결
+              <div
+                key={post.id}
+                onClick={() => handlePostClick(post.id)}
                 className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 cursor-pointer group flex items-start space-x-5"
               >
                 <div className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden">
@@ -204,7 +234,7 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
                 </div>
                 <div className="flex flex-col justify-between h-full">
                   <div>
-                    <span className={`text-xs font-bold ${post.color}`}>{post.category}</span>
+                    <span className={`text-xs font-bold ${post.color}`}>{parseCategoryTag(post.category)}</span>
                     <h3 className="text-md font-bold text-gray-800 mt-1 mb-2 group-hover:text-emerald-600 transition-colors leading-tight">
                       {post.title}
                     </h3>
@@ -228,16 +258,16 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
             <h2 className="text-2xl font-bold text-gray-900 mb-6">최신 게시물</h2>
             <div className="space-y-6">
               {listPosts.map((post) => (
-                <div 
-                  key={post.id} 
-                  onClick={() => handlePostClick(post.id)} // ⭐ 클릭 이벤트 연결
+                <div
+                  key={post.id}
+                  onClick={() => handlePostClick(post.id)}
                   className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 cursor-pointer group flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6"
                 >
                   <div className="w-full md:w-48 h-32 md:h-full flex-shrink-0 rounded-xl overflow-hidden">
                     <img src={post.img} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   </div>
                   <div className="flex-1">
-                    <span className={`text-sm font-bold ${post.color}`}>{post.category}</span>
+                    <span className={`text-sm font-bold ${post.color}`}>{parseCategoryTag(post.category)}</span>
                     <h3 className="text-xl font-bold text-gray-800 mt-2 mb-3 group-hover:text-emerald-600 transition-colors">
                       {post.title}
                     </h3>
@@ -246,6 +276,10 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
                       <span className="flex items-center space-x-1">
                         <Eye className="w-4 h-4" />
                         <span>{post.views}</span>
+                      </span>
+                      <span className="flex items-center space-x-1 text-rose-500">
+                        <span>♥</span>
+                        <span>{post.likeCount}</span>
                       </span>
                     </div>
                   </div>
@@ -257,9 +291,9 @@ const BoardPage = ({ pageFilter }) => { // 4. onNavigate, isAdmin prop 제거
             </div>
           </div>
         )}
-        
+
         {/* 게시물 없음 메시지 */}
-        {filteredPosts.length === 0 && (
+        {filteredPosts.length === 0 && !loading && (
           <div className="text-center py-20 bg-white rounded-2xl shadow-lg border border-gray-100">
             <h3 className="text-xl font-semibold text-gray-700">게시물이 없습니다.</h3>
             <p className="text-gray-500 mt-2">
