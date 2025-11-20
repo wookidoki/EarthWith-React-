@@ -1,11 +1,12 @@
 import React, { createContext, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from "axios";
 
 // src/assets/auth/authContext/AuthorContext.jsx -> /context/AuthContext.jsx 로 경로 통일
 // 현재 로그인 상태 및 권환확인용 컴포넌트 
 
 // 1. Context 생성
-const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
 // 2. Context를 "제공"하는 Provider 컴포넌트 생성
 export const AuthProvider = ({ children }) => {
@@ -14,6 +15,23 @@ export const AuthProvider = ({ children }) => {
   // TODO: 실제 앱에서는 이 기본값을 false로 변경해야 합니다.
   const [currentUser, setCurrentUser] = useState(null); 
   const navigate = useNavigate();
+
+
+  const [auth, setAuth ] = useState({
+        memberNo : null,
+        role : null,
+        memberImage : null,
+        phone : null,
+        refRno : null,
+        memberName : null,
+        accessToken : null,
+        enrollDate : null,
+        email : null,
+        refreshToken : null,
+        memberId : null,
+        memberPoint : null,
+        isAuthenticated : false
+    });
 
   const handleLogin = (userData) => {
     setIsLoggedIn(true);
@@ -37,18 +55,73 @@ export const AuthProvider = ({ children }) => {
     navigate("/main"); 
   };
 
+  const login = (memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint) => {
+    setAuth({
+        memberNo,
+        role,
+        memberImage,
+        phone,
+        refRno,
+        memberName,
+        accessToken,
+        enrollDate,
+        email,
+        refreshToken,
+        memberId,
+        memberPoint,
+        isAuthenticated : true,
+        });
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("memberId", memberId);
+    localStorage.setItem("memberName", memberName);
+    localStorage.setItem("memberNo", memberNo);
+    localStorage.setItem("memberImage", memberImage);
+    localStorage.setItem("phone", phone);
+    localStorage.setItem("refRno", refRno);
+    localStorage.setItem("enrollDate", enrollDate);
+    localStorage.setItem("email", email);
+    localStorage.setItem("memberPoint", memberPoint);
+    localStorage.setItem("role", role);
+  };
+
+  const logoutServer = async (memberId, refreshToken) => {
+  try {
+    await axios.post("http://localhost:8081/auth/logout", {
+      memberId,
+      refreshToken
+    });
+  } catch (error) {
+    console.error("서버 로그아웃 오류:", error);
+  }
+};
+
+  const logout = async () => {
+
+    const logoutId = localStorage.getItem("memberId");
+    const logoutToken = localStorage.getItem("refreshToken");
+
+    await logoutServer(logoutId, logoutToken);
+    
+    localStorage.clear();
+    navigate("/main");
+};
+
   // 3. Context가 제공할 값들을 정의
   const value = {
     isLoggedIn,
     isAdmin,
     currentUser,
+    auth,
     handleLogin,
     handleAdminLogin,
-    handleLogout
+    handleLogout,
+    login,
+    logout
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ isLoggedIn, isAdmin, currentUser, auth, handleLogin, handleAdminLogin, handleLogout, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -63,3 +136,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+
+

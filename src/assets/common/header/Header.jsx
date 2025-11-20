@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom'; // 1. useNavigate 제거, Link 사용
 import { Leaf, Clock, User } from 'lucide-react';
-import { useAuth } from '../../auth/authContext/AuthorContext';
+import { AuthContext } from '../../auth/authContext/AuthorContext';
 
-// src/assets/common/Header.jsx
+
 const Header = () => {
   const [climateTime, setClimateTime] = useState('...'); // 3. 초기값 수정
-  const { isLoggedIn } = useAuth(); // Context에서 로그인 상태 가져오기
+
+  const { auth, logout } = useContext(AuthContext); // Context에서 로그인 상태 가져오기
+
+
 
   useEffect(() => {
     // 2. 마감 시한 설정 (KST 기준)
@@ -67,8 +70,9 @@ const Header = () => {
 
           {/* 로그인/로그아웃 버튼 */}
           <div className="flex items-center space-x-6">
-            {isLoggedIn ? (
+            { localStorage.getItem("memberId") ? (
               // 5. 마이페이지 버튼
+              <>
               <Link 
                 to="/myprofile" 
                 className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center space-x-2"
@@ -76,6 +80,13 @@ const Header = () => {
                 <User className="h-5 w-5" />
                 <span>마이페이지</span>
               </Link>
+              <button
+                  onClick={logout}
+                  className="bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-all text-sm font-medium shadow-md shadow-gray-300"
+                >
+                  로그아웃
+                </button>
+              </>
             ) : (
               // 6. 로그인 버튼
               <Link 

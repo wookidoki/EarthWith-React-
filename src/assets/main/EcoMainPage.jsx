@@ -102,7 +102,8 @@ const EcoMainPage = () => {
         </div>
 
         {/* 7. 관리자 도구 (AdminToolsSection으로 분리) */}
-        {isAdmin && <AdminToolsSection />}
+
+        { localStorage.getItem("role") == "[ROLE_ADMIN]" ? ( <AdminToolsSection /> ) : ( <div></div> )}
         
       </div>
     </main>

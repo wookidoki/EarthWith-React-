@@ -2,16 +2,74 @@ import React, { useState } from 'react';
 import { Leaf, ArrowRight } from 'lucide-react';
 import { useAuth } from "../../auth/authContext/AuthorContext.jsx"; 
 import { useNavigate } from 'react-router-dom'; 
+import axios from "axios";
 
 
 const SignUpPage = () => {
   const navigate = useNavigate(); 
-  const { handleLogin, handleAdminLogin } = useAuth();
+  const { login } = useAuth();
+  const [ memberId, setMemberId ] = useState("");
+  const [ memberPwd, setMemberPwd ] = useState("");
+  const [ msg, setMsg ] = useState("");
+  const [ msgPwd, setMsgPwd ] = useState("");
   
   // 회원가입 페이지로 이동 핸들러
   const handleRegisterClick = (e) => {
     e.preventDefault(); 
     navigate('/register'); 
+  };
+
+  const onSubmitLogin = (e) => {
+      e.preventDefault();
+      const regexp = /^[a-zA-Z0-9]{2,40}$/;
+      // const regexpPwd = /^(?=.{6,20}$)(?=.*[a-z])(?=.*\\d)[^\\s]+$/;
+      
+      console.log(memberId);
+      console.log(memberPwd);
+
+      if(!regexp.test(memberId)){
+        setMsg("아이디 형식이 올바르지 않습니다.");
+        return;
+      } else if(!regexp.test(memberPwd)){
+        setMsgPwd("비밀번호 형식이 올바르지 않습니다.")
+        return;
+      } else {
+        setMsg("");
+      }
+      
+      axios.post("http://localhost:8081/auth/login",{
+            memberId, 
+            memberPwd
+        }).then((result) => {
+            console.log(result);
+
+            const {
+                memberNo,
+                role,
+                memberImage,
+                phone,
+                refRno,
+                memberName,
+                accessToken,
+                enrollDate,
+                email, 
+                refreshToken, 
+                memberId,
+                memberPoint
+            } = result.data;
+            login(memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint);
+
+            alert("로그인 성공");
+            navigate("/main"); 
+            
+        }).catch((error) => {
+            console.error(error);
+            alert(error.response.data["error-message"]);
+        });
+
+
+      
+
   };
 
   return (
@@ -36,25 +94,27 @@ const SignUpPage = () => {
           실제 API로 이메일/비밀번호를 전송하는 로직이 필요합니다.
           현재는 버튼 클릭으로 임시 로그인합니다.
         */}
-        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-          {/* 이메일 입력 */}
+        <form className="space-y-6" onSubmit={onSubmitLogin}>
+          {/* 아이디 입력 */}
           <div>
             <label 
               htmlFor="email" 
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              이메일
+              아이디
             </label>
             <input
               id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
+              name="memberId"
+              autoComplete="memberId"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              placeholder="you@example.com"
-              // onChange={(e) => setEmail(e.target.value)}
+              placeholder="ID"
+              onChange={(e) => setMemberId(e.target.value)}
             />
+            <label>
+              {msg}
+            </label>
           </div>
 
           {/* 비밀번호 입력 */}
@@ -67,14 +127,17 @@ const SignUpPage = () => {
             </label>
             <input
               id="password"
-              name="password"
+              name="memberPwd"
               type="password"
               autoComplete="current-password"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              placeholder="••••••••"
-              // onChange={(e) => setPassword(e.target.value)}
+              placeholder="password"
+              onChange={(e) => setMemberPwd(e.target.value)}
             />
+            <label>
+              {msgPwd}
+            </label>
           </div>
 
           <div className="flex items-center justify-between">
@@ -98,22 +161,13 @@ const SignUpPage = () => {
 
           {/* 일반 로그인 버튼 */}
           <button
-            type="button" 
-            onClick={handleLogin} 
+            type="submit" 
             className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-lg shadow-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 font-bold transition-all"
           >
             로그인
             <ArrowRight className="w-5 h-5 ml-2" />
           </button>
           
-          {/* 테스트용 관리자 로그인 버튼 */}
-          <button
-            type="button" 
-            onClick={handleAdminLogin}
-            className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-medium transition-all"
-          >
-            (테스트용) 관리자 로그인
-          </button>
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
