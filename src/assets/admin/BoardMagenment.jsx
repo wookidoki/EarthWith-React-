@@ -4,7 +4,11 @@ import { Search, ChevronLeft, ChevronRight, AlertTriangle, XCircle, CheckCircle,
 // --- 데이터 및 마스킹 로직 ---
 
 // 목업 데이터 (게시글 및 리뷰 통합)
+
+
+
 const initialItems = [
+  
   { id: 1, type: 'POST', postId: 101, author: '김**철', title: '환경 미션 달성!', content: '나무를 심었어요!', dateCreated: '2025-11-10', isReported: true, status: 'Active' },
   { id: 2, type: 'REVIEW', postId: 205, author: '이**수', title: '친환경 제품 리뷰', content: '만족도 별 5개!', dateCreated: '2025-11-11', isReported: false, status: 'Active' },
   { id: 3, type: 'POST', postId: 312, author: '박**민', title: '관리자 공지', content: '게시판 이용 안내입니다.', dateCreated: '2025-11-12', isReported: true, status: 'Active' },
@@ -12,7 +16,9 @@ const initialItems = [
   { id: 5, type: 'REVIEW', postId: 550, author: '정**영', title: '문의글 리뷰', content: '응대 빨라요!', dateCreated: '2025-11-14', isReported: true, status: 'Deleted' },
   { id: 6, type: 'POST', postId: 601, author: '황**진', title: '자전거 출퇴근', content: '탄소 절약 중입니다.', dateCreated: '2025-11-09', isReported: false, status: 'Active' },
   { id: 7, type: 'REVIEW', postId: 700, author: '강**호', title: '배송 리뷰', content: '빠른 배송 감사합니다.', dateCreated: '2025-11-08', isReported: false, status: 'Active' },
+   
 ];
+
 
 const ITEMS_PER_PAGE = 5;
 
@@ -38,7 +44,7 @@ const ItemTable = ({ items, onConfirmReport, onDeletePost, onRowClick }) => {
           onClick={() => setCurrentPage(i)}
           className={`px-4 py-2 mx-1 rounded-lg transition ${
             currentPage === i 
-              ? 'bg-emerald-600 text-white font-bold shadow-md' 
+              ? 'bg-emerald-600 text-white font-bold shadow-md'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
