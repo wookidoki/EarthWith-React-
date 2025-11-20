@@ -21,7 +21,7 @@ const EcoLandingPage = ({ onNavigate }) => {
     { number: "...", label: "1.5℃ 상승까지 남은 시간" },
     { number: "...", label: "참여중인 환경 지킴이" },
     { number: "89톤", label: "이번달 CO₂ 절감량" },
-    { number: "324개", label: "진행중인 챌린지" }
+    { number: "...", label: "진행중인 챌린지" }
   ]);
   
   // climateTime이 변경될 때 stats의 첫 번째 요소를 갱신
@@ -43,31 +43,34 @@ const EcoLandingPage = ({ onNavigate }) => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % 3);
     }, 4000);
+
+    //BE 매핑 
+    const API_BASE_URL = 'http://localhost:8081';
     
     const fetchMemberCount = async () => {
       try {
-        const response = await fetch('http://localhost:8081/stats/member-count');
+        const [memberCountResponse, boardCountResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/stats/member-count`),
+          fetch(`${API_BASE_URL}/stats/boards-join`)
+        ]);
         
-        if (!response.ok) {
-          throw new Error('API 응답 실패');
-        }
-        
-        const data = await response.json(); 
-        
+        const memberCountData = await memberCountResponse.json();
+        const boardCountResponseData = await boardCountResponse.json();
+
         setStats(prevStats => [
           prevStats[0],
-          { ...prevStats[1], number: data.memberCount.toLocaleString() },
+          { ...prevStats[1], number: memberCountData.memberCount.toLocaleString() },
           prevStats[2],
-          prevStats[3]
+          {...prevStats[3], number : boardCountResponseData.boardParticipationCount.toLocaleString()}
         ]);
         
       } catch (error) {
         console.error("환경 지킴이 수 조회 에러:", error);
         setStats(prevStats => [
            prevStats[0],
-           { ...prevStats[1], number: "12,847" }, 
+           { ...prevStats[1], number: "0" }, 
            prevStats[2],
-           prevStats[3]
+           {...prevStats[3], number: "0"}
          ]);
       }
     };
