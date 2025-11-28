@@ -6,7 +6,7 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(true); // 개발용 true
+  const [isAdmin, setIsAdmin] = useState(false); // 초기값 false 권장
   const [currentUser, setCurrentUser] = useState(null); 
   const navigate = useNavigate();
 
@@ -28,20 +28,28 @@ export const AuthProvider = ({ children }) => {
 
   // 로컬 로그인 처리
   const login = (memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint) => {
-    setAuth({
+    // 1. 사용자 정보를 객체로 묶음
+    const userObj = {
       memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint,
       isAuthenticated: true,
-    });
-    setIsLoggedIn(true);
-    // isAdmin 로직 예시: role이 'ROLE_ADMIN'이면 true
-    setIsAdmin(role === 'ROLE_ADMIN'); 
+    };
 
-    // 로컬 스토리지 저장
+    // 2. 상태 업데이트
+    setAuth(userObj);
+    setIsLoggedIn(true);
+    setIsAdmin(role === 'ROLE_ADMIN'); 
+    
+    // [핵심 수정] Header 컴포넌트가 감지할 수 있도록 currentUser 업데이트
+    setCurrentUser(userObj);
+
+    // 3. 로컬 스토리지 저장
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("memberId", memberId);
     localStorage.setItem("role", role);
-    // ... 나머지 항목 저장
+    localStorage.setItem("memberNo", memberNo);
+    localStorage.setItem("memberName", memberName);
+    localStorage.setItem("memberPoint", memberPoint);
   };
 
   // 로그아웃 처리
@@ -58,9 +66,12 @@ export const AuthProvider = ({ children }) => {
       console.error("서버 로그아웃 오류:", error);
     }
 
+    // 상태 초기화
     setAuth({ isAuthenticated: false });
     setIsLoggedIn(false);
     setIsAdmin(false);
+    setCurrentUser(null); // [핵심 수정] 로그아웃 시 currentUser 초기화
+    
     localStorage.clear();
     navigate("/main");
   };

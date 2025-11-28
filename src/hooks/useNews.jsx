@@ -52,6 +52,6 @@ export const useNews = () => {
   return {
     newsData, searchTerm, setSearchTerm, loading, error,
     featuredNews, listNews,
-    handleSearch // [수정됨] 오타 수정 (handleSearchs -> handleSearch)
+    handleSearch 
   };
 };

@@ -6,7 +6,7 @@ import MainLayout from "./components/layout/MainLayout";
 
 // --- Pages ---
 import EcoLandingPage from "./pages/EcoLandingPage"; 
-import SignUpPage from "./pages/SignUpPage";          
+import SignUpPage from "./pages/SignUpPage";           
 import RegisterPage from "./pages/RegisterPage"; 
 import EcoMainPage from "./pages/EcoMainPage";                 
 import EcoFeedPage from "./pages/EcoFeedPage";                 
@@ -51,7 +51,9 @@ function App() {
         <Route path="/board" element={<BoardPage pageFilter={'ALL'} />} />
         <Route path="/board-filtered" element={<BoardPage pageFilter={'A'} />} />
         <Route path="/board-detail/:id" element={<BoardDetail />} />
-        <Route path="/admin-enroll" element={<BoardEnrollPage onNavigate={handleNavigate} isAdmin={true} />} /> 
+        
+        {/* 글 작성 페이지 */}
+        <Route path="/board-enroll" element={<BoardEnrollPage />} /> 
         
         {/* Profile */}
         <Route path="/myprofile" element={<MyProfilePage />} />
