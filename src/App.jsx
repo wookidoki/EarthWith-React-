@@ -1,124 +1,71 @@
-import React, { useState } from "react";
-import { 
-  // Routes, Route, Link, useLocation, useNavigate는 이제 App에서만 사용합니다.
-  Routes, Route, useNavigate 
-} from 'react-router-dom';
-// lucide-react 아이콘은 이제 MainLayout의 자식인 Navigator에서만 사용합니다.
+import React from "react";
+import { Routes, Route, useNavigate } from 'react-router-dom';
 
-// 페이지 컴포넌트들 (경로를 `./assets/...`로 유지하고, 누락된 확장자 명시로 수정)
-import EcoLandingPage from "./assets/common/landing/EcoLandingPage.jsx"; 
-import EcoMainPage from "./assets/main/EcoMainPage.jsx";                 
-import EcoFeedPage from "./assets/feed/EcoFeedPage.jsx";                 
-import BoardPage from "./assets/board/BoardPage.jsx";
-import SignUpPage from "./assets/common/signup/SignUpPage.jsx";          
-import BoardEnroll from "./assets/board/BoardEnroll.jsx";
-import NewsPage from "./assets/news/NewsPage.jsx";                       
-import UserFeedEnrollPage from "./assets/feed/UserFeedEnrollPage.jsx";   
-import MyProfilePage from "./assets/auth/MyProfilePage.jsx"; 
-import MainLayout from "./assets/main/MainLayout.jsx"; 
+// --- Layout ---
+import MainLayout from "./components/layout/MainLayout";
 
-import BoardMagenment from "./assets/admin/BoardMagenment.jsx";       
-import ScoreMagenment from "./assets/admin/ScoreMagenment.jsx";       
-import Statis from "./assets/admin/Statis.jsx";                       
-import ErrorPage from "./assets/util/error/Error.jsx";
+// --- Pages ---
+import EcoLandingPage from "./pages/EcoLandingPage"; 
+import SignUpPage from "./pages/SignUpPage";           
+import RegisterPage from "./pages/RegisterPage"; 
+import EcoMainPage from "./pages/EcoMainPage";                 
+import EcoFeedPage from "./pages/EcoFeedPage";                 
+import UserFeedEnrollPage from "./pages/UserFeedEnrollPage";   
+import BoardPage from "./pages/BoardPage";
+import BoardEnrollPage from "./pages/BoardEnrollPage";
+import BoardDetail from "./pages/BoardDetail";
+import NewsPage from "./pages/NewsPage";
+import MyProfilePage from "./pages/MyProfilePage";
 
-//
-import RegisterPage from "./assets/common/signup/EnrollForm.jsx";
+// --- Admin Pages ---
+import BoardManagementPage from "./pages/admin/BoardManagementPage";
+import ScoreManagementPage from "./pages/admin/ScoreManagementPage";
+import StatisticsPage from "./pages/admin/StatisticsPage";
 
-// 메인 App 컴포넌트 
+const ErrorPage = () => <div className="p-10 text-center">404 Not Found</div>;
+
 function App() {
-  // 라우터 사용 로그인 설정값 예시 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(true); // 초기값 유지
-  
-  const navigate = useNavigate(); // 페이지 이동을 위한 훅
+  const navigate = useNavigate();
 
-  // 네비게이션 함수
   const handleNavigate = (path) => {
     navigate(path); 
     window.scrollTo(0, 0); 
   };
 
-  // --- 로그인/로그아웃 핸들러 ---
-  const handleLogin = () => { 
-    setIsLoggedIn(true); 
-    // TODO: 실제 사용자 정보 설정
-    handleNavigate("/main"); 
-  };
-  
-  const handleAdminLogin = () => { 
-    setIsLoggedIn(true); 
-    setIsAdmin(true); 
-    // TODO: 실제 관리자 정보 설정
-    handleNavigate("/main"); 
-  };
-
-  const handleLogout = () => { 
-    setIsLoggedIn(false); 
-    setIsAdmin(false); 
-    // TODO: 사용자 정보 초기화
-    handleNavigate("/"); // 로그아웃 후 랜딩 페이지로 이동
-  };
-
-  // MyProfilePage에서 Admin 페이지로 이동하기 위한 핸들러
-  const handleNavigateToAdmin = () => {
-    handleNavigate('/board'); // 관리자 페이지 기본 경로를 일반 게시판 경로로 변경
-  };
-
   return (
     <Routes>
-      {/* 1. 레이아웃이 필요 없는 독립 경로: Header, Footer, Navigator가 나타나지 않습니다. */}
+      {/* 1. Independent Routes */}
       <Route path="/" element={<EcoLandingPage onNavigate={handleNavigate} />} /> 
-      <Route 
-        path="/signup" 
-        element={<SignUpPage onLogin={handleLogin} onAdminLogin={handleAdminLogin} />}
-      />
-
-      {/* 2. <MainLayout> 경로: 이 라우트의 자식들은 Header, Footer, Navigator를 공통으로 사용합니다. */}
-      <Route element={<MainLayout />}>
-        {/* 일반 서비스 페이지 */}
-        <Route 
-          path="/main" 
-          element={<EcoMainPage onNavigate={handleNavigate} isLoggedIn={isLoggedIn} isAdmin={isAdmin} />} 
-        />
-        <Route path="/feed" element={<EcoFeedPage onNavigate={handleNavigate} />} />
-        <Route path="/news" element={<NewsPage />} />
-
-        {/* 게시판/마이페이지 (경로 수정: /admin -> /board) */}
-        <Route 
-          path="/board" 
-          element={<BoardPage onNavigate={handleNavigate} pageFilter={'ALL'} isAdmin={isAdmin} />} 
-        />
-        <Route 
-          path="/board-filtered"
-          element={<BoardPage onNavigate={handleNavigate} pageFilter={'A'} isAdmin={isAdmin} />} 
-        />
-
-
-        <Route path="/admin-enroll" element={<BoardEnroll onNavigate={handleNavigate} isAdmin={isAdmin} />} /> 
-        <Route path="/user-enroll" element={<UserFeedEnrollPage onNavigate={handleNavigate} />} />
-        
-        <Route 
-          path="/myprofile" 
-          element={
-            <MyProfilePage 
-              onLogout={handleLogout} 
-              isAdmin={isAdmin}
-              onNavigateToAdmin={handleNavigateToAdmin} // 변경된 경로 반영
-            />
-          }
-        />
-
-        <Route path="/admin/board" element={<BoardMagenment />} />        {/* 게시글/리뷰 관리 */}
-        <Route path="/admin/score" element={<ScoreMagenment />} />        {/* 인증 및 포인트 */}
-        <Route path="/admin/stats" element={<Statis />} />                {/* 통계 대시보드 */}
-
-      </Route>
-
+      <Route path="/signup" element={<SignUpPage />} />
       <Route path="/register" element={<RegisterPage />} /> 
+      <Route path="/login" element={<SignUpPage />} /> 
+
+      {/* 2. Main Layout Routes */}
+      <Route element={<MainLayout />}>
+        <Route path="/main" element={<EcoMainPage />} /> 
+        <Route path="/feed" element={<EcoFeedPage />} />
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="/user-enroll" element={<UserFeedEnrollPage />} />
+        
+        {/* Board */}
+        <Route path="/board" element={<BoardPage pageFilter={'ALL'} />} />
+        <Route path="/board-filtered" element={<BoardPage pageFilter={'A'} />} />
+        <Route path="/board-detail/:id" element={<BoardDetail />} />
+        
+        {/* 글 작성 페이지 */}
+        <Route path="/board-enroll" element={<BoardEnrollPage />} /> 
+        
+        {/* Profile */}
+        <Route path="/myprofile" element={<MyProfilePage />} />
+        
+        {/* Admin */}
+        <Route path="/admin/board" element={<BoardManagementPage />} />
+        <Route path="/admin/score" element={<ScoreManagementPage />} />
+        <Route path="/admin/stats" element={<StatisticsPage />} />
+      </Route>
       
-      {/* 3. 일치하는 경로가 없을 때 (ErrorPage로 연결) */}
-      <Route path="*" element={<ErrorPage onNavigate={handleNavigate} />} /> 
+      {/* 3. Fallback */}
+      <Route path="*" element={<ErrorPage />} /> 
     </Routes>
   );
 }
