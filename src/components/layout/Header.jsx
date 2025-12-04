@@ -43,10 +43,15 @@ const Header = () => {
                   </Link>
                 )}
 
-                <Link to="/admin/notice" className="flex items-center space-x-1 text-emerald-600 font-bold hover:text-emerald-800">
-                  <Megaphone className="h-5 w-5" />
-                  <span>공지 관리</span>
-                </Link>
+                {isAdmin && (
+                  <Link 
+                    to="/admin/notice" 
+                    className="flex items-center space-x-1 text-emerald-600 font-bold hover:text-emerald-800"
+                  >
+                    <Megaphone className="h-5 w-5" />
+                    <span>공지 관리</span>
+                  </Link>
+                )}
                 <Link to="/myprofile" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center space-x-2">
                   <User className="h-5 w-5" /><span>마이페이지</span>
                 </Link>
