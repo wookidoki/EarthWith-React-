@@ -21,6 +21,7 @@ import MyProfilePage from "./pages/MyProfilePage";
 import BoardManagementPage from "./pages/admin/BoardManagementPage";
 import ScoreManagementPage from "./pages/admin/ScoreManagementPage";
 import StatisticsPage from "./pages/admin/StatisticsPage";
+import NoticeManagementPage from "./pages/admin/NoticeManagementPage";
 
 const ErrorPage = () => <div className="p-10 text-center">404 Not Found</div>;
 
@@ -62,6 +63,7 @@ function App() {
         <Route path="/admin/board" element={<BoardManagementPage />} />
         <Route path="/admin/score" element={<ScoreManagementPage />} />
         <Route path="/admin/stats" element={<StatisticsPage />} />
+        <Route path="/admin/notice" element={<NoticeManagementPage />} />
       </Route>
       
       {/* 3. Fallback */}
