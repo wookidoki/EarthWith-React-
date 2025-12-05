@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
@@ -25,6 +25,45 @@ export const AuthProvider = ({ children }) => {
     memberPoint: null,
     isAuthenticated: false
   });
+
+  // [추가] 새로고침 시 로컬 스토리지 체크 및 로그인 상태 복구
+  useEffect(() => {
+    const storedToken = localStorage.getItem("accessToken");
+    
+    // 토큰이 존재하면 로그인 상태로 간주하고 상태 복구
+    if (storedToken) {
+      const storedMemberId = localStorage.getItem("memberId");
+      const storedRole = localStorage.getItem("role");
+      const storedMemberNo = localStorage.getItem("memberNo");
+      const storedMemberName = localStorage.getItem("memberName");
+      const storedMemberPoint = localStorage.getItem("memberPoint");
+      
+      // 1. Auth 상태 복구
+      setAuth(prev => ({
+        ...prev,
+        accessToken: storedToken,
+        memberId: storedMemberId,
+        role: storedRole,
+        memberNo: storedMemberNo,
+        memberName: storedMemberName,
+        memberPoint: storedMemberPoint,
+        isAuthenticated: true
+      }));
+
+      // 2. 로그인 여부 및 관리자 여부 복구
+      setIsLoggedIn(true);
+      setIsAdmin(storedRole === 'ROLE_ADMIN');
+      
+      // 3. CurrentUser 복구 (헤더 등 UI 표시용)
+      setCurrentUser({
+        memberId: storedMemberId,
+        memberName: storedMemberName,
+        role: storedRole,
+        memberNo: storedMemberNo,
+        memberPoint: storedMemberPoint
+      });
+    }
+  }, []); // 빈 배열([])을 넣어 컴포넌트가 처음 나타날 때 딱 한 번만 실행되게 함
 
   // 로컬 로그인 처리
   const login = (memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint) => {
