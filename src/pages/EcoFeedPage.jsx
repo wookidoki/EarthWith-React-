@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Send, Bookmark, Users, PlusSquare, Hash, Activity, ThumbsUp, Trash, Pencil, AlertTriangle } from 'lucide-react';
 import { useEcoFeed } from '../hooks/useEcoFeed'; // Hook Import
@@ -26,6 +26,46 @@ const EcoFeedPage = () => {
   handleCommentEditCancel,
   handleCommentReportSubmit,
 } = handlers;
+
+// 🔥 실시간 통계 상태
+  const [stats, setStats] = useState({
+    todayParticipants: 0, // 오늘의 참여
+    todayPost: 0,         // 오늘의 새 글
+  });
+
+    useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // 필요한 카테고리 코드 (예: 참여모집이 C2라면 C2 사용)
+        const category = 'C2';
+
+        const [resParticipants, resPost] = await Promise.all([
+          fetch(`http://localhost:8081/stats/today?category=${category}`),
+          fetch(`http://localhost:8081/stats/todayPost?category=${category}`),
+        ]);
+
+        if (!resParticipants.ok) {
+          console.error('오늘의 참여 조회 실패:', resParticipants.status);
+        }
+        if (!resPost.ok) {
+          console.error('오늘의 새 글 조회 실패:', resPost.status);
+        }
+
+        const participantsData = await resParticipants.json().catch(() => ({}));
+        const postData = await resPost.json().catch(() => ({}));
+
+        setStats({
+          todayParticipants: participantsData.todayParticipants ?? 0,
+          todayPost: postData.todayPost ?? 0,
+        });
+      } catch (e) {
+        console.error('실시간 통계 조회 중 에러:', e);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
 
 // 댓글 삭제
 const [deleteModal, setDeleteModal] = React.useState({
@@ -108,8 +148,8 @@ const [commentReportContent, setCommentReportContent] = useState("");
                 <Activity className="w-5 h-5" /> <span className="text-sm font-medium">참여 현황</span>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between items-center"><span className="text-sm text-gray-700">진행중인 모집</span><span className="text-sm font-bold text-emerald-600">12 건</span></div>
-                <div className="flex justify-between items-center"><span className="text-sm text-gray-700">오늘의 참여</span><span className="text-sm font-bold text-emerald-600">45 명</span></div>
+                <div className="flex justify-between items-center"><span className="text-sm text-gray-700">오늘의 새글</span><span className="text-sm font-bold text-emerald-600">{stats.todayPost} 건</span></div>
+                <div className="flex justify-between items-center"><span className="text-sm text-gray-700">오늘의 참여</span><span className="text-sm font-bold text-emerald-600">{stats.todayParticipants} 명</span></div>
               </div>
             </div>
           </div>

@@ -619,7 +619,7 @@ const handleCommentEditCancel = (postId) => {
 
   // 필터링된 데이터 반환
   const filteredFeed = feedData.filter(post => {
-    if (filter === 'popular') return post.likes > 100;
+    if (filter === 'popular') return Number(post.likes) >= 100;
     if (filter === 'recruit') return post.categoryCode === 'C2';
     return true;
   });
