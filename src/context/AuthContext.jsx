@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
@@ -26,6 +26,27 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: false
   });
 
+// ⭐ 앱 시작 시 localStorage에서 복원
+  useEffect(() => {
+    const storedMemberNo = localStorage.getItem('memberNo');
+    const storedAccessToken = localStorage.getItem('accessToken');
+    const storedRole = localStorage.getItem('role');
+    
+    if (storedMemberNo && storedAccessToken) {
+      setAuth(prev => ({
+        ...prev,
+        memberNo: storedMemberNo,
+        accessToken: storedAccessToken,
+        role: storedRole,
+        isAuthenticated: true
+      }));
+      setIsLoggedIn(true);
+      setIsAdmin(storedRole === 'ROLE_ADMIN');
+      
+      console.log('✅ 로그인 상태 복원:', storedMemberNo);
+    }
+  }, []);
+
   // 로컬 로그인 처리
   const login = (memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint) => {
     setAuth({
@@ -36,12 +57,21 @@ export const AuthProvider = ({ children }) => {
     // isAdmin 로직 예시: role이 'ROLE_ADMIN'이면 true
     setIsAdmin(role === 'ROLE_ADMIN'); 
 
-    // 로컬 스토리지 저장
+    // 로컬 스토리지에 모든 정보 저장 
+    localStorage.setItem("memberNo", memberNo); 
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("memberId", memberId);
     localStorage.setItem("role", role);
-    // ... 나머지 항목 저장
+    localStorage.setItem("memberName", memberName);
+    localStorage.setItem("email", email);
+    localStorage.setItem("memberPoint", memberPoint);
+    localStorage.setItem("phone", phone);
+    localStorage.setItem("enrollDate", enrollDate);
+  
+    console.log('localStorage에 저장 완료!');
+    console.log('memberNo:', localStorage.getItem('memberNo'));
+    console.log('accessToken:', localStorage.getItem('accessToken'));
   };
 
   // 로그아웃 처리
@@ -58,9 +88,25 @@ export const AuthProvider = ({ children }) => {
       console.error("서버 로그아웃 오류:", error);
     }
 
-    setAuth({ isAuthenticated: false });
+    setAuth({ 
+      memberNo: null,
+      role: null,
+      memberImage: null,
+      phone: null,
+      refRno: null,
+      memberName: null,
+      accessToken: null,
+      enrollDate: null,
+      email: null,
+      refreshToken: null,
+      memberId: null,
+      memberPoint: null,
+      isAuthenticated: false 
+    });
     setIsLoggedIn(false);
     setIsAdmin(false);
+    setCurrentUser(null);
+
     localStorage.clear();
     navigate("/main");
   };
