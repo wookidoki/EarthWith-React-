@@ -98,11 +98,14 @@ const BoardDetail = () => {
 
                 {/* 댓글 영역 */}
                 <CommentSection 
-                    comments={comments} 
-                    newComment={newComment} 
-                    setNewComment={setNewComment} 
-                    onAdd={handlers.handleAddComment} 
-                    onDelete={handlers.handleDeleteComment} 
+                    // [핵심 수정 1] URL에서 가져온 id를 boardNo라는 이름으로 넘겨줌
+                    boardNo={id} 
+                    
+                    // [핵심 수정 2] CommentSection은 'commentList'라는 이름을 원함
+                    commentList={comments} 
+                    
+                    // [핵심 수정 3] 데이터 갱신을 위해 새로고침 함수 전달 (임시로 페이지 리로드)
+                    onRefresh={() => window.location.reload()} 
                 />
             </main>
         </div>
