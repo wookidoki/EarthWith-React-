@@ -17,7 +17,6 @@ import BoardDetail from "./pages/BoardDetail";
 import NewsPage from "./pages/NewsPage";
 import MyProfilePage from "./pages/MyProfilePage";
 import ProfileHeader from "./pages/ProfileHeader";
-
 // --- Admin Pages ---
 import BoardManagementPage from "./pages/admin/BoardManagementPage";
 import ScoreManagementPage from "./pages/admin/ScoreManagementPage";

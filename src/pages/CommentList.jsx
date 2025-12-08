@@ -17,57 +17,55 @@ const CommentList = () => {
     setLoading(true);
     try {
       const memberNo = localStorage.getItem('memberNo');
+      
+      if (!memberNo) {
+        console.error('memberNo가 없습니다.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('API 요청:', `http://localhost:8081/members/comments?memberNo=${memberNo}&page=${currentPage}`);
+      
       const response = await fetch(
         `http://localhost:8081/members/comments?memberNo=${memberNo}&page=${currentPage}`
       );
-      const data = await response.json();
       
-      setComments(data.list || []);
+      console.log('API 응답 상태:', response.status);
+      
+      const data = await response.json();
+      console.log('받은 데이터:', data);
+      
+      // null 필터링
+      const filteredList = (data.list || []).filter(item => item !== null);
+      setComments(filteredList);
       setPageInfo(data.pageInfo);
     } catch (error) {
       console.error('댓글 로드 실패:', error);
-      // 임시 데이터 (테스트용)
-      setComments([
-        {
-          commentNo: 1,
-          commentContent: '정말 유익한 정보네요! 저도 한번 도전해보겠습니다.',
-          regDate: '2024.12.01',
-          boardNo: 10,
-          boardTitle: '제로웨이스트 도전 후기'
-        },
-        {
-          commentNo: 2,
-          commentContent: '좋은 제품 추천 감사합니다. 구매해봐야겠어요.',
-          regDate: '2024.11.30',
-          boardNo: 15,
-          boardTitle: '친환경 제품 추천'
-        },
-        {
-          commentNo: 3,
-          commentContent: '이런 활동이 많아졌으면 좋겠네요 👍',
-          regDate: '2024.11.29',
-          boardNo: 8,
-          boardTitle: '지역 환경 정화 활동'
-        }
-      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCommentClick = (boardNo) => {
-    navigate(`/board/${boardNo}`);
+  const handleCommentClick = (refBno) => {
+    navigate(`/board-detail/${refBno}`);
   };
 
   const formatDate = (dateString) => {
-    return dateString || '날짜 없음';
+    if (!dateString) return '날짜 없음';
+    // Date 객체로 변환
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\. /g, '.').replace(/\.$/, '');
   };
 
   return (
     <div className="space-y-4">
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-500 border-t-transparent"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
           <p className="text-gray-500 mt-4">로딩 중...</p>
         </div>
       ) : comments.length === 0 ? (
@@ -85,22 +83,22 @@ const CommentList = () => {
             {comments.map((comment) => (
               <div
                 key={comment.commentNo}
-                onClick={() => handleCommentClick(comment.boardNo)}
+                onClick={() => handleCommentClick(comment.refBno)}
                 className="p-5 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white">
                 
-                {/* 원글 제목 */}
+                {/* 원글 제목 - 댓글 테이블에는 게시글 제목이 없으므로 제거하거나 별도 API 호출 필요 */}
                 <div className="flex items-center space-x-2 mb-3 pb-3 border-b border-gray-100">
                   <CornerDownRight className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">댓글 단 게시글:</span>
+                  <span className="text-sm text-gray-500">게시글 번호:</span>
                   <span className="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors">
-                    {comment.boardTitle || '제목 없음'}
+                    #{comment.refBno}
                   </span>
                 </div>
                 
                 {/* 댓글 내용 */}
                 <div className="mb-3">
                   <p className="text-gray-800 leading-relaxed">
-                    {comment.commentContent}
+                    {comment.commentContent || '내용 없음'}
                   </p>
                 </div>
                 
@@ -114,7 +112,7 @@ const CommentList = () => {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleCommentClick(comment.boardNo);
+                      handleCommentClick(comment.refBno);
                     }}
                     className="text-blue-500 hover:text-blue-700 font-medium text-xs flex items-center space-x-1 px-3 py-1 rounded-full hover:bg-blue-50 transition-all">
                     <span>원글 보기</span>

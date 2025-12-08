@@ -62,7 +62,7 @@ const BookmarkList = () => {
   };
 
   const handleBookmarkClick = (boardNo) => {
-    navigate(`/board/${boardNo}`);
+    navigate(`/board-detail/${boardNo}`);
   };
 
   const formatDate = (dateString) => {

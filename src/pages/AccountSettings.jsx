@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { User, Lock, Bell, AlertTriangle } from 'lucide-react';
+import { User, Lock, AlertTriangle } from 'lucide-react';
 
 const AccountSettings = ({ currentUser }) => {
-  const [activeSection, setActiveSection] = useState('profile'); // profile, security, notifications, danger
+  const [activeSection, setActiveSection] = useState('profile');
   
   // 프로필 수정
   const [nickname, setNickname] = useState(currentUser?.memberName || '');
@@ -13,39 +13,83 @@ const AccountSettings = ({ currentUser }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
-  // 알림 설정
-  const [notifications, setNotifications] = useState({
-    comment: true,
-    like: true,
-    follow: false,
-    event: true
-  });
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    
+  // ⭐ 이메일 변경
+  const handleEmailUpdate = async () => {
     try {
-      const memberNo = localStorage.getItem('memberNo');
-      const response = await fetch(`http://localhost:8081/members/${memberNo}`, {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`http://localhost:8081/members/email`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          memberName: nickname,
-          email: email,
-          phone: phone
+          newEmail: email
         })
       });
 
       if (response.ok) {
-        alert('프로필이 수정되었습니다.');
+        alert('이메일이 수정되었습니다.');
+        // localStorage 업데이트
+        localStorage.setItem('email', email);
+      } else {
+        const errorText = await response.text();
+        alert(`이메일 수정 실패: ${errorText}`);
       }
     } catch (error) {
-      console.error('프로필 수정 실패:', error);
-      alert('프로필 수정에 실패했습니다.');
+      console.error('이메일 수정 실패:', error);
+      alert('이메일 수정에 실패했습니다.');
+    }
+  };
+
+  // ⭐ 전화번호 변경
+  const handlePhoneUpdate = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`http://localhost:8081/members/phone`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          newPhone: phone
+        })
+      });
+
+      if (response.ok) {
+        alert('전화번호가 수정되었습니다.');
+        // localStorage 업데이트
+        localStorage.setItem('phone', phone);
+      } else {
+        const errorText = await response.text();
+        alert(`전화번호 수정 실패: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('전화번호 수정 실패:', error);
+      alert('전화번호 수정에 실패했습니다.');
+    }
+  };
+
+  // ⭐ 프로필 전체 업데이트
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    
+    // 이메일과 전화번호를 각각 업데이트
+    const emailChanged = email !== currentUser?.email;
+    const phoneChanged = phone !== currentUser?.phone;
+    
+    if (emailChanged) {
+      await handleEmailUpdate();
+    }
+    
+    if (phoneChanged) {
+      await handlePhoneUpdate();
+    }
+    
+    if (!emailChanged && !phoneChanged) {
+      alert('변경된 정보가 없습니다.');
     }
   };
 
@@ -57,13 +101,18 @@ const AccountSettings = ({ currentUser }) => {
       return;
     }
 
+    if (newPassword.length < 8) {
+      alert('비밀번호는 최소 8자 이상이어야 합니다.');
+      return;
+    }
+
     try {
-      const memberNo = localStorage.getItem('memberNo');
-      const response = await fetch(`http://localhost:8081/members/${memberNo}/password`, {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`http://localhost:8081/members/password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           currentPassword: currentPassword,
@@ -76,32 +125,13 @@ const AccountSettings = ({ currentUser }) => {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+      } else {
+        const errorText = await response.text();
+        alert(`비밀번호 변경 실패: ${errorText}`);
       }
     } catch (error) {
       console.error('비밀번호 변경 실패:', error);
       alert('비밀번호 변경에 실패했습니다.');
-    }
-  };
-
-  const handleNotificationChange = async (key) => {
-    const updated = {
-      ...notifications,
-      [key]: !notifications[key]
-    };
-    setNotifications(updated);
-
-    try {
-      const memberNo = localStorage.getItem('memberNo');
-      await fetch(`http://localhost:8081/members/${memberNo}/notifications`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(updated)
-      });
-    } catch (error) {
-      console.error('알림 설정 실패:', error);
     }
   };
 
@@ -112,10 +142,11 @@ const AccountSettings = ({ currentUser }) => {
 
     try {
       const memberNo = localStorage.getItem('memberNo');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`http://localhost:8081/members/${memberNo}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -123,6 +154,8 @@ const AccountSettings = ({ currentUser }) => {
         alert('계정이 삭제되었습니다.');
         localStorage.clear();
         window.location.href = '/';
+      } else {
+        alert('계정 삭제에 실패했습니다.');
       }
     } catch (error) {
       console.error('계정 삭제 실패:', error);
@@ -139,7 +172,7 @@ const AccountSettings = ({ currentUser }) => {
   return (
     <div className="space-y-6">
       {/* 설정 메뉴 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -150,12 +183,12 @@ const AccountSettings = ({ currentUser }) => {
               onClick={() => setActiveSection(item.id)}
               className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center space-y-2 ${
                 isActive
-                  ? `bg-${item.color}-50 border-${item.color}-500 shadow-md`
+                  ? 'bg-emerald-50 border-emerald-500 shadow-md'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
               }`}>
-              <Icon className={`w-6 h-6 ${isActive ? `text-${item.color}-600` : 'text-gray-400'}`} />
+              <Icon className={`w-6 h-6 ${isActive ? 'text-emerald-600' : 'text-gray-400'}`} />
               <span className={`text-sm font-medium text-center ${
-                isActive ? `text-${item.color}-700` : 'text-gray-600'
+                isActive ? 'text-emerald-700' : 'text-gray-600'
               }`}>
                 {item.label}
               </span>
@@ -179,8 +212,10 @@ const AccountSettings = ({ currentUser }) => {
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="닉네임을 입력하세요"
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  disabled
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-gray-100 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-500 mt-1">닉네임은 변경할 수 없습니다.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
@@ -198,9 +233,10 @@ const AccountSettings = ({ currentUser }) => {
                   type="tel" 
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="전화번호를 입력하세요"
+                  placeholder="010-0000-0000"
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                 />
+                <p className="text-xs text-gray-500 mt-1">형식: 010-1234-5678</p>
               </div>
               <button 
                 type="submit" 
@@ -235,8 +271,10 @@ const AccountSettings = ({ currentUser }) => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="새 비밀번호를 입력하세요"
                   required
+                  minLength={8}
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                 />
+                <p className="text-xs text-gray-500 mt-1">최소 8자 이상</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
@@ -257,7 +295,6 @@ const AccountSettings = ({ currentUser }) => {
             </form>
           </div>
         )}
-
 
         {/* 계정 관리 */}
         {activeSection === 'danger' && (

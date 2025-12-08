@@ -11,7 +11,8 @@ const PostList = () => {
 
   useEffect(() => {
     const memberNo = localStorage.getItem('memberNo');
-    
+    const token = localStorage.getItem('token');
+
     // memberNo가 없으면 경고
     if (!memberNo) {
       console.error('memberNo가 없습니다. 로그인이 필요합니다.');
@@ -58,7 +59,7 @@ const PostList = () => {
   };
 
   const handlePostClick = (boardNo) => {
-    navigate(`/board/${boardNo}`);
+    navigate(`/board-detail/${boardNo}`);
   };
 
   const formatDate = (dateString) => {
@@ -92,12 +93,12 @@ const PostList = () => {
                 
                 {/* 제목 */}
                 <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-emerald-600 transition-colors">
-                  {post.title}
+                  {post.boardTitle}
                 </h3>
                 
                 {/* 내용 미리보기 */}
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {post.content}
+                  {post.boardContent}
                 </p>
                 
                 {/* 메타 정보 */}

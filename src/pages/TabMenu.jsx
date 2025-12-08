@@ -16,16 +16,6 @@ const TabMenu = ({ activeTab, setActiveTab }) => {
           <span>내 활동</span>
         </button>
         <button
-          onClick={() => setActiveTab('points')}
-          className={`flex-1 py-4 px-6 font-semibold transition-all flex items-center justify-center space-x-2 ${
-            activeTab === 'points'
-              ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500'
-              : 'text-gray-600 hover:bg-gray-50'
-          }`}>
-          <Coins className="w-5 h-5" />
-          <span>포인트 내역</span>
-        </button>
-        <button
           onClick={() => setActiveTab('settings')}
           className={`flex-1 py-4 px-6 font-semibold transition-all flex items-center justify-center space-x-2 ${
             activeTab === 'settings'
@@ -40,4 +30,4 @@ const TabMenu = ({ activeTab, setActiveTab }) => {
   );
 };
 
-export default TabMenu;
+export default TabMenu; 

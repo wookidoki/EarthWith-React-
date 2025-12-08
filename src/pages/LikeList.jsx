@@ -62,7 +62,7 @@ const LikeList = () => {
   };
 
   const handleLikeClick = (boardNo) => {
-    navigate(`/board/${boardNo}`);
+    navigate(`/board-detail/${boardNo}`);
   };
 
   const formatDate = (dateString) => {
