@@ -11,13 +11,11 @@ const NewsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
       <div className="max-w-6xl mx-auto p-4 md:p-8">
-        {/* [수정됨] md:stems-center -> md:items-center (오타 수정) */}
         <div className="flex flex-col md:flex-row justify-between md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">환경 소식</h1>
             <p className="text-gray-500 mt-1">API에서 가져온 최신 환경 뉴스를 확인하세요.</p>
           </div>
-          {/* [수정됨] 불필요한 문자 's' 제거 */}
           <div className="relative mt-4 md:mt-0 w-full md:w-72">
             <input 
                 type="text" 

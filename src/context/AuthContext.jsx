@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect} from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
@@ -7,6 +7,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); // ⭐ true → false로 변경
+
   const [currentUser, setCurrentUser] = useState(null); 
   const navigate = useNavigate();
 
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }) => {
     memberPoint: null,
     isAuthenticated: false
   });
+
 
   // ⭐ 앱 시작 시 localStorage에서 모든 정보 복원
   useEffect(() => {
@@ -97,6 +99,73 @@ const login = (memberNo, role, memberImage, phone, refRno, memberName, accessTok
     memberId, 
     memberPoint,
     isAuthenticated: true,
+
+  // [추가] 새로고침 시 로컬 스토리지 체크 및 로그인 상태 복구
+  /*
+  useEffect(() => {
+    const storedToken = localStorage.getItem("accessToken");
+    
+    // 토큰이 존재하면 로그인 상태로 간주하고 상태 복구
+    if (storedToken) {
+      const storedMemberId = localStorage.getItem("memberId");
+      const storedRole = localStorage.getItem("role");
+      const storedMemberNo = localStorage.getItem("memberNo");
+      const storedMemberName = localStorage.getItem("memberName");
+      const storedMemberPoint = localStorage.getItem("memberPoint");
+      
+      // 1. Auth 상태 복구
+      setAuth(prev => ({
+        ...prev,
+        accessToken: storedToken,
+        memberId: storedMemberId,
+        role: storedRole,
+        memberNo: storedMemberNo,
+        memberName: storedMemberName,
+        memberPoint: storedMemberPoint,
+        isAuthenticated: true
+      }));
+
+      // 2. 로그인 여부 및 관리자 여부 복구
+      setIsLoggedIn(true);
+      setIsAdmin(storedRole === 'ROLE_ADMIN');
+      
+      // 3. CurrentUser 복구 (헤더 등 UI 표시용)
+      setCurrentUser({
+        memberId: storedMemberId,
+        memberName: storedMemberName,
+        role: storedRole,
+        memberNo: storedMemberNo,
+        memberPoint: storedMemberPoint
+      });
+    }
+  }, []); // 빈 배열([])을 넣어 컴포넌트가 처음 나타날 때 딱 한 번만 실행되게 함
+
+  // 로컬 로그인 처리
+  const login = (memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint) => {
+    // 1. 사용자 정보를 객체로 묶음
+    const userObj = {
+      memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint,
+      isAuthenticated: true,
+    };
+
+    // 2. 상태 업데이트
+    setAuth(userObj);
+    setIsLoggedIn(true);
+    setIsAdmin(role === 'ROLE_ADMIN'); 
+    
+    // [핵심 수정] Header 컴포넌트가 감지할 수 있도록 currentUser 업데이트
+    setCurrentUser(userObj);
+
+    // 3. 로컬 스토리지 저장
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("memberId", memberId);
+    localStorage.setItem("role", role);
+    localStorage.setItem("memberNo", memberNo);
+    localStorage.setItem("memberName", memberName);
+    localStorage.setItem("memberPoint", memberPoint);
+    */
+
   };
   
   setAuth(authData);
@@ -159,6 +228,14 @@ const login = (memberNo, role, memberImage, phone, refRno, memberName, accessTok
     setCurrentUser(null);
 
     // ⭐ localStorage 완전히 삭제
+/*
+    // 상태 초기화
+    setAuth({ isAuthenticated: false });
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    setCurrentUser(null); // [핵심 수정] 로그아웃 시 currentUser 초기화
+    
+*/
     localStorage.clear();
     
     console.log('✅ 로그아웃 완료');

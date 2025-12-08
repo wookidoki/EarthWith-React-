@@ -1,1 +1,22 @@
 @import 'tailwindcss';
+
+/* 댓글 삭제 애니메이션 */
+.comment-fade-out {
+  overflow: hidden;
+  animation: commentFadeOut 0.25s ease forwards;
+}
+
+@keyframes commentFadeOut {
+  0% {
+    opacity: 1;
+    height: 40px;
+    margin: 8px 0;
+    padding: 4px 0;
+  }
+  100% {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}

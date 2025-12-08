@@ -26,59 +26,79 @@ export const useBoardDetail = (id) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!id) return;
+ useEffect(() => {
+  if (!id) return;
 
-    const fetchBoardDetail = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/boards/${id}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) throw new Error('게시글을 찾을 수 없습니다.');
-          throw new Error('서버 통신 오류');
-        }
+  // 게시글 상세 조회
+  const fetchBoardDetail = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/boards/${id}`);
 
-        const data = await response.json();
-
-        // 1. 게시글 데이터 매핑 (Back DTO -> Front State)
-        const style = getCategoryStyle(data.boardCategory);
-        const mappedPost = {
-            id: data.boardNo,
-            title: data.boardTitle,
-            category: data.boardCategory, // 필요 시 카테고리 이름 변환 로직 추가
-            content: data.boardContent,
-            author: data.memberName,
-            date: data.regDate,
-            views: data.viewCount,
-            icon: style.icon,
-            color: style.color,
-            // 이미지는 현재 DB에 없으므로 플레이스홀더 사용
-            img: `https://placehold.co/800x400/e2e8f0/1e293b?text=${encodeURIComponent(data.boardCategory)}`
-        };
-
-        // 2. 댓글 데이터 매핑
-        const mappedComments = (data.commentList || []).map(c => ({
-            id: c.commentNo,
-            author: c.memberName,
-            text: c.commentContent,
-            date: c.regDate
-        }));
-
-        setPost(mappedPost);
-        setComments(mappedComments);
-        setLikeCount(data.likeCount || 0);
-
-      } catch (err) {
-        console.error("상세 조회 실패:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('게시글을 찾을 수 없습니다.');
+        throw new Error('서버 통신 오류');
       }
-    };
 
-    fetchBoardDetail();
-  }, [id]);
+      const data = await response.json();
+
+      const style = getCategoryStyle(data.boardCategory);
+      const mappedPost = {
+        id: data.boardNo,
+        title: data.boardTitle,
+        category: data.boardCategory,
+        content: data.boardContent,
+        author: data.memberName,
+        date: data.regDate,
+        views: data.viewCount,
+        icon: style.icon,
+        color: style.color,
+        img: `https://placehold.co/800x400/e2e8f0/1e293b?text=${encodeURIComponent(data.boardCategory)}`
+      };
+
+      setPost(mappedPost);
+      setLikeCount(data.likeCount || 0);
+    } catch (err) {
+      console.error("상세 조회 실패:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 댓글 목록 조회 (refMno 포함)
+  const fetchComments = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/comments?boardNo=${id}`);
+
+      if (!res.ok) {
+        throw new Error('댓글을 불러오지 못했습니다.');
+      }
+
+      const data = await res.json();
+
+      setComments(
+        data.map(c => ({
+          commentNo: c.commentNo,
+          commentContent: c.commentContent,
+          refMno: c.refMno,
+          refBno: c.refBno,
+          regDate: c.regDate,
+          status: c.status,
+          memberName: c.memberName,
+          memberId: c.memberId,
+          memberImage: c.memberImage,
+        }))
+      );
+    } catch (err) {
+      console.error('댓글 조회 실패:', err);
+    }
+  };
+
+  fetchBoardDetail();
+  fetchComments();
+
+}, [id]);
 
   // --- 핸들러 (현재는 UI만 동작, 추후 API 연동 필요) ---
 
