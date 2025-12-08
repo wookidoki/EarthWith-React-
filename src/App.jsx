@@ -21,8 +21,9 @@ import MyProfilePage from "./pages/MyProfilePage";
 import BoardManagementPage from "./pages/admin/BoardManagementPage";
 import ScoreManagementPage from "./pages/admin/ScoreManagementPage";
 import StatisticsPage from "./pages/admin/StatisticsPage";
+import NoticeManagementPage from "./pages/admin/NoticeManagementPage";
 
-const ErrorPage = () => <div className="p-10 text-center">404 Not Found</div>;
+const ErrorPage = () => <div className="p-10 text-center text-gray-500 font-bold">404 Not Found</div>;
 
 function App() {
   const navigate = useNavigate();
@@ -34,34 +35,37 @@ function App() {
 
   return (
     <Routes>
-      {/* 1. Independent Routes */}
+      {/* 1. Independent Routes (레이아웃 없음) */}
       <Route path="/" element={<EcoLandingPage onNavigate={handleNavigate} />} /> 
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/register" element={<RegisterPage />} /> 
       <Route path="/login" element={<SignUpPage />} /> 
 
-      {/* 2. Main Layout Routes */}
+      {/* 2. Main Layout Routes (네비게이터 포함) */}
       <Route element={<MainLayout />}>
         <Route path="/main" element={<EcoMainPage />} /> 
         <Route path="/feed" element={<EcoFeedPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/user-enroll" element={<UserFeedEnrollPage />} />
         
-        {/* Board */}
-        <Route path="/board" element={<BoardPage pageFilter={'ALL'} />} />
-        <Route path="/board-filtered" element={<BoardPage pageFilter={'A'} />} />
-        <Route path="/board-detail/:id" element={<BoardDetail />} />
+        {/* 일반 커뮤니티 게시판 (pageFilter="B") */}
+        <Route path="/board" element={<BoardPage pageFilter={'B'} />} />
         
-        {/* 글 작성 페이지 */}
+        {/* 공지사항/관리자 게시판 (pageFilter="A") */}
+        <Route path="/board-filtered" element={<BoardPage pageFilter={'A'} />} />
+        
+        {/* 게시글 상세 및 작성 */}
+        <Route path="/board-detail/:id" element={<BoardDetail />} />
         <Route path="/board-enroll" element={<BoardEnrollPage />} /> 
         
         {/* Profile */}
         <Route path="/myprofile" element={<MyProfilePage />} />
         
-        {/* Admin */}
+        {/* Admin Dashboard Routes */}
         <Route path="/admin/board" element={<BoardManagementPage />} />
         <Route path="/admin/score" element={<ScoreManagementPage />} />
         <Route path="/admin/stats" element={<StatisticsPage />} />
+        <Route path="/admin/notice" element={<NoticeManagementPage />} />
       </Route>
       
       {/* 3. Fallback */}

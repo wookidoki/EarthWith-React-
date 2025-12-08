@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Leaf, Clock, User } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext'; // 경로 주의
+import { Leaf, Clock, User, Megaphone } from 'lucide-react'; // Megaphone 아이콘 추가
+import { useAuth } from '../../context/AuthContext';
 import useClimateTime from '../../hooks/useClimateTime';
 
 const Header = () => {
   const climateTime = useClimateTime(); 
-  const { currentUser, logout } = useAuth(); // useAuth에서 currentUser로 변경 가정
+  // [수정 1] isAdmin 추가 (AuthContext에서 가져옴)
+  const { currentUser, logout, isAdmin } = useAuth(); 
 
   return (
     <header className="bg-white/70 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-40 h-20">
@@ -31,6 +32,26 @@ const Header = () => {
           <div className="flex items-center space-x-6">
             { currentUser ? (
               <>
+                {/* [수정 02] 관리자일 경우에만 '공지 관리' 버튼 표시 */}
+                {isAdmin && (
+                  <Link 
+                    to="/admin/notice" 
+                    className="text-emerald-600 hover:text-emerald-800 transition-colors text-sm font-bold flex items-center space-x-1"
+                  >
+                    <Megaphone className="h-5 w-5" />
+                    <span>공지 관리</span>
+                  </Link>
+                )}
+
+                {isAdmin && (
+                  <Link 
+                    to="/admin/notice" 
+                    className="flex items-center space-x-1 text-emerald-600 font-bold hover:text-emerald-800"
+                  >
+                    <Megaphone className="h-5 w-5" />
+                    <span>공지 관리</span>
+                  </Link>
+                )}
                 <Link to="/myprofile" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium flex items-center space-x-2">
                   <User className="h-5 w-5" /><span>마이페이지</span>
                 </Link>

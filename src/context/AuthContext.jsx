@@ -1,12 +1,14 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
 export const AuthContext = createContext();
 
+const API_BASE_URL = 'http://localhost:8081'; // 주소 상수화
+
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // 초기값 false 권장
+  const [isAdmin, setIsAdmin] = useState(false); 
   const [currentUser, setCurrentUser] = useState(null); 
   const navigate = useNavigate();
 
@@ -26,23 +28,56 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: false
   });
 
-  // 로컬 로그인 처리
+  // [유지] 새로고침 시 로컬 스토리지 체크 및 로그인 상태 복구
+  useEffect(() => {
+    const storedToken = localStorage.getItem("accessToken");
+    
+    if (storedToken) {
+      const storedMemberId = localStorage.getItem("memberId");
+      const storedRole = localStorage.getItem("role");
+      const storedMemberNo = localStorage.getItem("memberNo");
+      const storedMemberName = localStorage.getItem("memberName");
+      const storedMemberPoint = localStorage.getItem("memberPoint");
+      
+      setAuth(prev => ({
+        ...prev,
+        accessToken: storedToken,
+        memberId: storedMemberId,
+        role: storedRole,
+        memberNo: storedMemberNo,
+        memberName: storedMemberName,
+        memberPoint: storedMemberPoint,
+        isAuthenticated: true
+      }));
+
+      setIsLoggedIn(true);
+      setIsAdmin(storedRole === 'ROLE_ADMIN');
+      
+      setCurrentUser({
+        memberId: storedMemberId,
+        memberName: storedMemberName,
+        role: storedRole,
+        memberNo: storedMemberNo,
+        memberPoint: storedMemberPoint
+      });
+      
+      // Axios 기본 헤더 설정 추가 (새로고침 후에도 유지되도록)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+    }
+  }, []); 
+
+  // [유지] 로컬 로그인 처리
   const login = (memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint) => {
-    // 1. 사용자 정보를 객체로 묶음
     const userObj = {
       memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint,
       isAuthenticated: true,
     };
 
-    // 2. 상태 업데이트
     setAuth(userObj);
     setIsLoggedIn(true);
     setIsAdmin(role === 'ROLE_ADMIN'); 
-    
-    // [핵심 수정] Header 컴포넌트가 감지할 수 있도록 currentUser 업데이트
     setCurrentUser(userObj);
 
-    // 3. 로컬 스토리지 저장
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("memberId", memberId);
@@ -50,33 +85,52 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("memberNo", memberNo);
     localStorage.setItem("memberName", memberName);
     localStorage.setItem("memberPoint", memberPoint);
+
+    // 로그인 직후 헤더 설정
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
   };
 
-  // 로그아웃 처리
+  // [수정] 로그아웃 처리 (헤더 추가 및 에러 처리 강화)
   const logout = async () => {
     const logoutId = localStorage.getItem("memberId");
     const logoutToken = localStorage.getItem("refreshToken");
+    const accessToken = localStorage.getItem("accessToken"); // 헤더용 토큰
 
     try {
-      await axios.post("http://localhost:8081/auth/logout", {
-        memberId: logoutId,
-        refreshToken: logoutToken
-      });
+      if (logoutId && logoutToken) {
+        // 백엔드 MemberLogoutDTO 필드에 맞춰 데이터 전송
+        await axios.post(`${API_BASE_URL}/auth/logout`, 
+          {
+            memberId: logoutId,
+            refreshToken: logoutToken
+          },
+          {
+            headers: {
+              // 백엔드 필터 통과를 위해 토큰 헤더 추가
+              'Authorization': `Bearer ${accessToken}`, 
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        console.log("서버 로그아웃 성공");
+      }
     } catch (error) {
-      console.error("서버 로그아웃 오류:", error);
+      console.error("서버 로그아웃 오류 (무시하고 진행):", error);
+    } finally {
+      // 서버 응답과 관계없이 클라이언트 상태는 무조건 초기화
+      setAuth({ isAuthenticated: false });
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+      setCurrentUser(null);
+      
+      localStorage.clear();
+      delete axios.defaults.headers.common['Authorization']; // 헤더 삭제
+      
+      navigate("/main");
     }
-
-    // 상태 초기화
-    setAuth({ isAuthenticated: false });
-    setIsLoggedIn(false);
-    setIsAdmin(false);
-    setCurrentUser(null); // [핵심 수정] 로그아웃 시 currentUser 초기화
-    
-    localStorage.clear();
-    navigate("/main");
   };
 
-  // 임시 핸들러 (App.jsx 호환용)
+  // [유지] 임시 핸들러
   const handleLogin = (userData) => {
     setIsLoggedIn(true);
     setCurrentUser(userData);

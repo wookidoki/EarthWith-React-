@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, ChevronRight, Car, Home, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-// 컴포넌트 Import (경로 수정됨)
 import CalculatorWidget from '../components/widgets/CalculatorWidget'; 
 import LocalEcoCard from '../components/dashboard/LocalEcoCard'; 
 import RankingWidget from '../components/dashboard/RankingWidget'; 

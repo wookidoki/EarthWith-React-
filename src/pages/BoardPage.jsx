@@ -2,30 +2,36 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PlusSquare, Search, ChevronRight, Eye, ChevronLeft } from 'lucide-react';
-import { useBoardList } from '../hooks/useBoardList'; // 경로 확인 필요
+import { useBoardList } from '../hooks/useBoardList'; 
 
 const BoardPage = ({ pageFilter }) => {
   const navigate = useNavigate();
-  // isAdmin 뿐만 아니라 로그인 여부(isLoggedIn)도 가져옵니다.
   const { isAdmin, isLoggedIn } = useAuth();
-  
-  const { 
-    topPosts, filteredListPosts, pageInfo, loading, 
-    searchTerm, setSearchTerm, selectedCategory, setSelectedCategory, 
-    uniqueCategories, setCurrentPage 
+
+  const {
+    topPosts, 
+    filteredListPosts, 
+    pageInfo, 
+    loading,
+    searchTerm, 
+    setSearchTerm, 
+    selectedCategoryCode, // 현재 선택된 코드 (ALL, A1 등)
+    setSelectedCategoryCode,
+    categoryList,         // 화면 표시용 카테고리 목록 [{code:'A1', name:'에너지'}...]
+    setCurrentPage
   } = useBoardList(pageFilter);
 
   const handlePostClick = (postId) => navigate(`/board-detail/${postId}`);
 
-  const pageTitle = pageFilter === 'A' ? '관리자 게시물' : '커뮤니티 게시판';
-  const pageDescription = pageFilter === 'A' 
-    ? '공지사항 및 중요 정보를 확인합니다.' 
-    : '자유롭게 소통하고 정보를 공유하세요.';
+  // 페이지 타입에 따른 UI 텍스트 설정
+  const isNoticeBoard = pageFilter === 'A';
+  const pageTitle = isNoticeBoard ? '관리자 소식' : '커뮤니티';
+  const pageDescription = isNoticeBoard
+    ? '에코어스의 주요 정책과 소식을 확인하세요.'
+    : '정보 공유, 봉사 모집, 공동구매 등 자유롭게 소통하세요.';
 
-  // [핵심 로직] 글쓰기 버튼 표시 여부 결정
-  // 1. 관리자 게시판('A')인 경우 -> 관리자(isAdmin)만 작성 가능
-  // 2. 그 외(커뮤니티 등) -> 로그인한 사용자(isLoggedIn)라면 누구나 작성 가능
-  const showWriteButton = pageFilter === 'A' ? isAdmin : isLoggedIn;
+  // 글쓰기 권한 체크
+  const showWriteButton = isNoticeBoard ? isAdmin : isLoggedIn;
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex justify-center items-center">
@@ -35,6 +41,7 @@ const BoardPage = ({ pageFilter }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
+      {/* 헤더 */}
       <header className="bg-white sticky top-20 z-30 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
           <div>
@@ -42,7 +49,6 @@ const BoardPage = ({ pageFilter }) => {
               <p className="text-gray-500 mt-1">{pageDescription}</p>
           </div>
           
-          {/* 조건부 렌더링: 권한이 있는 경우에만 버튼 표시 */}
           {showWriteButton && (
             <button 
                 onClick={() => navigate('/board-enroll')} 
@@ -55,19 +61,38 @@ const BoardPage = ({ pageFilter }) => {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* 검색 및 카테고리 필터 영역 */}
+        {/* 필터 섹션 */}
         <div className="mb-8 p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
            <div className="flex flex-col md:flex-row gap-4">
+            {/* 검색창 */}
             <div className="relative w-full md:flex-1">
-              <input type="text" placeholder="게시물 제목 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50" />
+              <input 
+                type="text" 
+                placeholder="제목으로 검색..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50" 
+              />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
-            {/* 카테고리 버튼들 */}
+            
+            {/* [UX 핵심] 카테고리 탭 (한글 이름 출력) */}
             <div className="w-full md:flex-1 overflow-x-auto">
                <div className="flex space-x-2 pb-2">
-                 {uniqueCategories.map((category) => (
-                   <button key={category} onClick={() => setSelectedCategory(category)} className={`px-5 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${selectedCategory === category ? 'bg-emerald-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                     {category}
+                 {categoryList.map((cat) => (
+                   <button 
+                     key={cat.code} 
+                     onClick={() => {
+                        setSelectedCategoryCode(cat.code);
+                        setCurrentPage(1); 
+                     }} 
+                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                        selectedCategoryCode === cat.code 
+                        ? 'bg-emerald-600 text-white shadow-md transform scale-105' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                     }`}
+                   >
+                     {cat.name}
                    </button>
                  ))}
                </div>
@@ -75,17 +100,21 @@ const BoardPage = ({ pageFilter }) => {
           </div>
         </div>
 
-        {/* Bento 그리드 (조회수 상위 3개) */}
+        {/* Bento Grid (상단 인기 게시물) */}
         {topPosts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-              {/* 첫 번째 게시물 (크게) */}
+              {/* 메인 핫 게시물 */}
               {topPosts[0] && (
-                 <div onClick={() => handlePostClick(topPosts[0].id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group md:col-span-1 md:row-span-2">
+                 <div onClick={() => handlePostClick(topPosts[0].id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group md:col-span-1 md:row-span-2 relative overflow-hidden">
                     <div className="relative w-full h-64 rounded-xl overflow-hidden mb-5">
-                        <img src={topPosts[0].img} alt={topPosts[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"/>
-                        <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-bold">HOT</div>
+                        <img src={topPosts[0].img} alt={topPosts[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                        <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-bold shadow-md z-10">HOT</div>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-emerald-600">{topPosts[0].title}</h2>
+                    {/* 카테고리 뱃지 */}
+                    <span className={`inline-block px-2 py-1 mb-2 rounded text-xs font-bold ${topPosts[0].bg} ${topPosts[0].color}`}>
+                        {topPosts[0].categoryName}
+                    </span>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-emerald-600 line-clamp-2">{topPosts[0].title}</h2>
                     <div className="flex items-center text-sm text-gray-500 space-x-4">
                         <span>{topPosts[0].date}</span>
                         <span className="flex items-center"><Eye className="w-4 h-4 mr-1" /> {topPosts[0].views}</span>
@@ -93,15 +122,20 @@ const BoardPage = ({ pageFilter }) => {
                  </div>
               )}
               
-              {/* 두 번째, 세 번째 게시물 */}
+              {/* 서브 인기 게시물 2개 */}
               <div className="flex flex-col space-y-6">
                  {topPosts.slice(1, 3).map((post) => (
-                     <div key={post.id} onClick={() => handlePostClick(post.id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group flex items-start space-x-5 h-full">
+                     <div key={post.id} onClick={() => handlePostClick(post.id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group flex items-start space-x-5 h-full relative overflow-hidden">
                         <div className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden">
-                            <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"/>
+                            <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
                         </div>
-                        <div className="flex flex-col justify-between h-full">
-                            <h2 className="text-md font-bold text-gray-900 mb-2 group-hover:text-emerald-600">{post.title}</h2>
+                        <div className="flex flex-col justify-between h-full w-full">
+                            <div>
+                                <span className={`inline-block px-2 py-0.5 mb-1 rounded text-[10px] font-bold ${post.bg} ${post.color}`}>
+                                    {post.categoryName}
+                                </span>
+                                <h2 className="text-md font-bold text-gray-900 mb-1 group-hover:text-emerald-600 line-clamp-2">{post.title}</h2>
+                            </div>
                             <div className="flex items-center text-sm text-gray-500 space-x-4">
                                 <span className="flex items-center"><Eye className="w-4 h-4 mr-1" /> {post.views}</span>
                             </div>
@@ -112,32 +146,47 @@ const BoardPage = ({ pageFilter }) => {
           </div>
         )}
 
-        {/* 일반 리스트 뷰 */}
-        <div className="space-y-6">
-            {filteredListPosts.map(post => (
-                <div key={post.id} onClick={() => handlePostClick(post.id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-                    <div className="w-full md:w-48 h-32 md:h-full flex-shrink-0 rounded-xl overflow-hidden">
-                        <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"/>
-                    </div>
-                    <div className="flex-1 w-full">
-                        <div className="flex items-center space-x-2 mb-2">
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${post.color.replace('text-', 'bg-').replace('500', '100')} text-gray-700`}>{post.category}</span>
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-800 mt-2 mb-3 group-hover:text-emerald-600">{post.title}</h3>
-                        <div className="text-sm text-gray-500">{post.date} · 조회 {post.views}</div>
-                    </div>
-                    <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-emerald-600 hidden md:block" />
+        {/* 일반 리스트 */}
+        <div className="space-y-4">
+            {filteredListPosts.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <p className="text-gray-400 font-medium">등록된 게시물이 없습니다.</p>
                 </div>
-            ))}
+            ) : (
+                filteredListPosts.map(post => (
+                    <div key={post.id} onClick={() => handlePostClick(post.id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                        <div className="w-full md:w-48 h-32 md:h-full flex-shrink-0 rounded-xl overflow-hidden">
+                            <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                        </div>
+                        <div className="flex-1 w-full">
+                            <div className="flex items-center space-x-2 mb-2">
+                                {/* 카테고리 뱃지 (한글 이름 + 색상) */}
+                                <span className={`px-2 py-1 rounded text-xs font-bold ${post.bg} ${post.color} flex items-center gap-1`}>
+                                    {/* 아이콘 컴포넌트 렌더링 */}
+                                    {post.icon && <post.icon className="w-3 h-3" />}
+                                    {post.categoryName}
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-800 mt-2 mb-3 group-hover:text-emerald-600 line-clamp-1">{post.title}</h3>
+                            <div className="text-sm text-gray-500 flex items-center space-x-2">
+                                <span>{post.date}</span>
+                                <span>·</span>
+                                <span>조회 {post.views}</span>
+                            </div>
+                        </div>
+                        <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-emerald-600 hidden md:block" />
+                    </div>
+                ))
+            )}
         </div>
 
-        {/* Pagination Controls */}
+        {/* 페이지네이션 */}
         {pageInfo && (
             <div className="mt-12 flex justify-center items-center space-x-2">
                 <button 
                     disabled={pageInfo.currentPage === 1}
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -150,7 +199,7 @@ const BoardPage = ({ pageFilter }) => {
                             onClick={() => setCurrentPage(pageNum)}
                             className={`w-10 h-10 rounded-lg font-bold transition-all ${
                                 pageInfo.currentPage === pageNum 
-                                ? 'bg-emerald-600 text-white shadow-md' 
+                                ? 'bg-emerald-600 text-white shadow-md transform scale-105' 
                                 : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                             }`}
                         >
@@ -162,7 +211,7 @@ const BoardPage = ({ pageFilter }) => {
                 <button 
                     disabled={pageInfo.currentPage === pageInfo.maxPage}
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageInfo.maxPage))}
-                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
                 >
                     <ChevronRight className="w-5 h-5" />
                 </button>

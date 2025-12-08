@@ -1,12 +1,13 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-    ThumbsUp, Share2, MessageSquare, Eye, XCircle, ArrowLeft, Send, 
-    Loader2, Trash2, Edit, User, Calendar 
+    ThumbsUp, Share2, Loader2, Trash2, Edit, User, Calendar, ArrowLeft 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-// [수정됨] 경로를 상위 폴더(..)로 나갔다가 hooks로 들어가도록 변경
 import { useBoardDetail } from '../hooks/useBoardDetail';
+
+// [변경됨] 서버측 변경사항 반영: 댓글 컴포넌트를 외부에서 가져옵니다.
+import CommentSection from '../components/board/CommentSection';
 
 // [헬퍼 함수] 카테고리 코드 스타일 매핑
 const getCategoryInfo = (code) => {
@@ -23,60 +24,6 @@ const getCategoryInfo = (code) => {
     return map[code] || { label: '기타', color: 'bg-gray-100 text-gray-600 border-gray-200' };
 };
 
-// [내부 컴포넌트] 댓글 섹션
-const CommentSection = ({ comments, newComment, setNewComment, onAdd, onDelete }) => (
-    <div className="mt-8 pt-8 border-t border-gray-100">
-        <h3 className="text-xl font-bold text-gray-800 flex items-center mb-6">
-            <MessageSquare className="w-5 h-5 mr-2 text-emerald-600" /> 
-            댓글 <span className="ml-1 text-emerald-600">{comments.length}</span>
-        </h3>
-        
-        {/* 댓글 입력창 */}
-        <div className="flex gap-3 mb-8">
-            <textarea 
-                className="flex-grow p-4 bg-gray-50 border border-gray-200 rounded-xl resize-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent focus:outline-none transition-all placeholder-gray-400 text-sm" 
-                rows="3" 
-                placeholder="따뜻한 댓글을 남겨주세요..." 
-                value={newComment} 
-                onChange={(e) => setNewComment(e.target.value)} 
-            />
-            <button 
-                onClick={onAdd} 
-                className="flex-shrink-0 bg-emerald-600 text-white w-16 rounded-xl flex items-center justify-center hover:bg-emerald-700 transition shadow-sm active:scale-95"
-            >
-                <Send className="w-5 h-5" />
-            </button>
-        </div>
-
-        {/* 댓글 목록 */}
-        <div className="space-y-4">
-            {comments.length > 0 ? comments.map((comment) => (
-                <div key={comment.commentNo} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                                <User className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <span className="font-bold text-gray-800 text-sm block">{comment.memberName}</span>
-                                <span className="text-xs text-gray-400">{comment.regDate}</span>
-                            </div>
-                        </div>
-                        <button onClick={() => onDelete(comment.commentNo)} className="text-gray-300 hover:text-red-500 transition p-1">
-                            <XCircle className="w-4 h-4" />
-                        </button>
-                    </div>
-                    <p className="text-gray-600 text-sm leading-relaxed pl-10">{comment.commentContent}</p>
-                </div>
-            )) : (
-                <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <p className="text-gray-400 text-sm">아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
-                </div>
-            )}
-        </div>
-    </div>
-);
-
 // [메인 컴포넌트] 게시글 상세
 const BoardDetail = () => {
     const { id } = useParams();
@@ -85,7 +32,7 @@ const BoardDetail = () => {
     
     // 커스텀 훅 사용
     const { 
-        post, comments, newComment, setNewComment, loading, error, 
+        post, comments, loading, error, 
         actions 
     } = useBoardDetail(id);
 
@@ -107,9 +54,6 @@ const BoardDetail = () => {
     );
 
     // [본인 확인 로직]
-    // 1. 로그인 정보(auth.memberId)가 있고
-    // 2. 게시글 작성자 정보(post.boardWriter)가 있으며
-    // 3. 둘이 일치할 때만 true
     const isWriter = auth?.memberId && post?.boardWriter && (auth.memberId === post.boardWriter);
     
     // 카테고리 정보 가져오기
@@ -146,7 +90,7 @@ const BoardDetail = () => {
             </div>
 
             <main className="max-w-4xl mx-auto px-4 py-8">
-                <article className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <article className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-8">
                     {/* 게시글 헤더 */}
                     <div className="p-8 pb-6 border-b border-gray-50">
                         <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border mb-4 ${categoryInfo.color}`}>
@@ -170,7 +114,7 @@ const BoardDetail = () => {
                                 </span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <Eye className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-400">조회수</span>
                                 <span>{post.views}</span>
                             </div>
                         </div>
@@ -204,18 +148,14 @@ const BoardDetail = () => {
                             <span className="font-bold">공유하기</span>
                         </button>
                     </div>
-
-                    {/* 댓글 섹션 */}
-                    <div className="px-8 pb-10">
-                        <CommentSection 
-                            comments={comments} 
-                            newComment={newComment} 
-                            setNewComment={setNewComment} 
-                            onAdd={() => actions.handleAddComment(auth.memberName)} 
-                            onDelete={actions.handleDeleteComment} 
-                        />
-                    </div>
                 </article>
+
+                {/* 댓글 영역 (분리된 컴포넌트 사용) */}
+                <CommentSection 
+                    boardNo={id} 
+                    commentList={comments} 
+                    onRefresh={() => window.location.reload()} 
+                />
             </main>
         </div>
     );

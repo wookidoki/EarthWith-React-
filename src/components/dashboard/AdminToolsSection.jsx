@@ -1,14 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Settings, Users, CheckSquare, List } from 'lucide-react';
+import { BarChart3, Settings, Users, CheckSquare, List, Megaphone } from 'lucide-react';
 
 const AdminToolsSection = () => {
   const navigate = useNavigate();
+
   const adminMenus = [
     { name: '게시글/리뷰 관리', path: '/admin/board', icon: List, bgColor: 'bg-emerald-50', textColor: 'text-emerald-700' },
     { name: '인증 및 포인트', path: '/admin/score', icon: CheckSquare, bgColor: 'bg-orange-50', textColor: 'text-orange-700' },
     { name: '통계 대시보드', path: '/admin/stats', icon: BarChart3, bgColor: 'bg-indigo-50', textColor: 'text-indigo-600' },
     { name: '회원/신고 관리', path: '/admin/board', icon: Users, bgColor: 'bg-cyan-50', textColor: 'text-cyan-600' },
+    { name: '공지사항 관리', path: '/admin/notice', icon: Megaphone, bgColor: 'bg-yellow-50', textColor: 'text-yellow-700' },
   ];
 
   return (
@@ -17,6 +19,7 @@ const AdminToolsSection = () => {
         <h3 className="text-xl font-semibold text-gray-900">관리자 도구</h3>
         <Settings className="h-5 w-5 text-gray-400" />
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         {adminMenus.map((menu) => (
           <div key={menu.name} onClick={() => navigate(menu.path)} className={`cursor-pointer p-3 ${menu.bgColor} rounded-xl flex flex-col items-center justify-center hover:bg-opacity-80 transition-all`}>
