@@ -16,6 +16,7 @@ import BoardEnrollPage from "./pages/BoardEnrollPage";
 import BoardDetail from "./pages/BoardDetail";
 import NewsPage from "./pages/NewsPage";
 import MyProfilePage from "./pages/MyProfilePage";
+import ErrorPage from "./pages/ErrorPage";
 
 // --- Admin Pages ---
 import BoardManagementPage from "./pages/admin/BoardManagementPage";
@@ -23,7 +24,7 @@ import ScoreManagementPage from "./pages/admin/ScoreManagementPage";
 import StatisticsPage from "./pages/admin/StatisticsPage";
 import NoticeManagementPage from "./pages/admin/NoticeManagementPage";
 
-const ErrorPage = () => <div className="p-10 text-center">404 Not Found</div>;
+// const ErrorPage = () => <div className="p-10 text-center">404 Not Found</div>;
 
 function App() {
   const navigate = useNavigate();
@@ -64,10 +65,11 @@ function App() {
         <Route path="/admin/score" element={<ScoreManagementPage />} />
         <Route path="/admin/stats" element={<StatisticsPage />} />
         <Route path="/admin/notice" element={<NoticeManagementPage />} />
-      </Route>
       
-      {/* 3. Fallback */}
-      <Route path="*" element={<ErrorPage />} /> 
+        {/* 3. 404 에러페이지 전역처리 */}
+        <Route path="*" element={<ErrorPage path={/* 현재 경로를 알려주고 싶으면 */ window.location.pathname} />} />
+
+      </Route>
     </Routes>
   );
 }
