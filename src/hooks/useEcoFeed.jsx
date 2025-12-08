@@ -89,7 +89,12 @@ export const useEcoFeed = () => {
 
   isBookmarked: post.bookmarked ?? false,
 
-  isLiked: false,
+  isLiked:
+    typeof post.isLiked === 'boolean'
+      ? post.isLiked
+      : !!post.liked,   // liked 라는 이름으로 올 수도 있으니 방어적 처리
+
+
   isCommentOpen: false,
   tags: post.tags || [],
   commentsList: post.commentsList || [],

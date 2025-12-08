@@ -1,30 +1,31 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '/src/context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext';
 import { PlusSquare, Search, ChevronRight, Eye, ChevronLeft } from 'lucide-react';
-import { useBoardList } from '/src/hooks/useBoardList.jsx';
+import { useBoardList } from '../hooks/useBoardList'; // 경로 확인 필요
 
 const BoardPage = ({ pageFilter }) => {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  // isAdmin 뿐만 아니라 로그인 여부(isLoggedIn)도 가져옵니다.
+  const { isAdmin, isLoggedIn } = useAuth();
   
   const { 
-    topPosts,             // 상위 3개 (Bento용)
-    filteredListPosts,    // 페이징된 리스트
-    pageInfo,             // PageInfo 객체 (maxPage, currentPage 등)
-    loading, 
-    searchTerm, 
-    setSearchTerm, 
-    selectedCategory, 
-    setSelectedCategory, 
-    uniqueCategories,
-    setCurrentPage        // 페이지 변경 핸들러
+    topPosts, filteredListPosts, pageInfo, loading, 
+    searchTerm, setSearchTerm, selectedCategory, setSelectedCategory, 
+    uniqueCategories, setCurrentPage 
   } = useBoardList(pageFilter);
 
   const handlePostClick = (postId) => navigate(`/board-detail/${postId}`);
 
   const pageTitle = pageFilter === 'A' ? '관리자 게시물' : '커뮤니티 게시판';
-  const pageDescription = '공지사항 및 일반 정보를 확인합니다.';
+  const pageDescription = pageFilter === 'A' 
+    ? '공지사항 및 중요 정보를 확인합니다.' 
+    : '자유롭게 소통하고 정보를 공유하세요.';
+
+  // [핵심 로직] 글쓰기 버튼 표시 여부 결정
+  // 1. 관리자 게시판('A')인 경우 -> 관리자(isAdmin)만 작성 가능
+  // 2. 그 외(커뮤니티 등) -> 로그인한 사용자(isLoggedIn)라면 누구나 작성 가능
+  const showWriteButton = pageFilter === 'A' ? isAdmin : isLoggedIn;
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex justify-center items-center">
@@ -40,8 +41,13 @@ const BoardPage = ({ pageFilter }) => {
               <h1 className="text-3xl font-bold text-gray-900">{pageTitle}</h1>
               <p className="text-gray-500 mt-1">{pageDescription}</p>
           </div>
-          {isAdmin && (
-            <button onClick={() => navigate('/admin-enroll')} className="flex items-center space-x-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg">
+          
+          {/* 조건부 렌더링: 권한이 있는 경우에만 버튼 표시 */}
+          {showWriteButton && (
+            <button 
+                onClick={() => navigate('/board-enroll')} 
+                className="flex items-center space-x-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg"
+            >
               <PlusSquare className="w-5 h-5" /><span>새 글 작성</span>
             </button>
           )}
@@ -51,7 +57,6 @@ const BoardPage = ({ pageFilter }) => {
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* 검색 및 카테고리 필터 영역 */}
         <div className="mb-8 p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
-           {/* ...기존 검색 UI 코드 유지... */}
            <div className="flex flex-col md:flex-row gap-4">
             <div className="relative w-full md:flex-1">
               <input type="text" placeholder="게시물 제목 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50" />
@@ -73,37 +78,37 @@ const BoardPage = ({ pageFilter }) => {
         {/* Bento 그리드 (조회수 상위 3개) */}
         {topPosts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-             {/* 첫 번째 게시물 (크게) */}
-             {topPosts[0] && (
-                <div onClick={() => handlePostClick(topPosts[0].id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group md:col-span-1 md:row-span-2">
-                   <div className="relative w-full h-64 rounded-xl overflow-hidden mb-5">
-                       <img src={topPosts[0].img} alt={topPosts[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"/>
-                       <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-bold">HOT</div>
-                   </div>
-                   <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-emerald-600">{topPosts[0].title}</h2>
-                   <div className="flex items-center text-sm text-gray-500 space-x-4">
-                       <span>{topPosts[0].date}</span>
-                       <span className="flex items-center"><Eye className="w-4 h-4 mr-1" /> {topPosts[0].views}</span>
-                   </div>
-                </div>
-             )}
-             
-             {/* 두 번째, 세 번째 게시물 (작게 세로 배치) */}
-             <div className="flex flex-col space-y-6">
-                {topPosts.slice(1, 3).map((post) => (
-                    <div key={post.id} onClick={() => handlePostClick(post.id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group flex items-start space-x-5 h-full">
-                       <div className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden">
-                           <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"/>
-                       </div>
-                       <div className="flex flex-col justify-between h-full">
-                           <h2 className="text-md font-bold text-gray-900 mb-2 group-hover:text-emerald-600">{post.title}</h2>
-                           <div className="flex items-center text-sm text-gray-500 space-x-4">
-                               <span className="flex items-center"><Eye className="w-4 h-4 mr-1" /> {post.views}</span>
-                           </div>
-                       </div>
+              {/* 첫 번째 게시물 (크게) */}
+              {topPosts[0] && (
+                 <div onClick={() => handlePostClick(topPosts[0].id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group md:col-span-1 md:row-span-2">
+                    <div className="relative w-full h-64 rounded-xl overflow-hidden mb-5">
+                        <img src={topPosts[0].img} alt={topPosts[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"/>
+                        <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-bold">HOT</div>
                     </div>
-                ))}
-             </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-emerald-600">{topPosts[0].title}</h2>
+                    <div className="flex items-center text-sm text-gray-500 space-x-4">
+                        <span>{topPosts[0].date}</span>
+                        <span className="flex items-center"><Eye className="w-4 h-4 mr-1" /> {topPosts[0].views}</span>
+                    </div>
+                 </div>
+              )}
+              
+              {/* 두 번째, 세 번째 게시물 */}
+              <div className="flex flex-col space-y-6">
+                 {topPosts.slice(1, 3).map((post) => (
+                     <div key={post.id} onClick={() => handlePostClick(post.id)} className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all cursor-pointer group flex items-start space-x-5 h-full">
+                        <div className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden">
+                            <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform"/>
+                        </div>
+                        <div className="flex flex-col justify-between h-full">
+                            <h2 className="text-md font-bold text-gray-900 mb-2 group-hover:text-emerald-600">{post.title}</h2>
+                            <div className="flex items-center text-sm text-gray-500 space-x-4">
+                                <span className="flex items-center"><Eye className="w-4 h-4 mr-1" /> {post.views}</span>
+                            </div>
+                        </div>
+                     </div>
+                 ))}
+              </div>
           </div>
         )}
 

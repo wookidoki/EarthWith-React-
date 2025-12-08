@@ -2,48 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ThumbsUp, Share2, Bookmark, MessageSquare, Eye, XCircle, ArrowLeft, Send, Loader2 } from 'lucide-react';
 import { useBoardDetail } from '../hooks/useBoardDetail';
-
-const CommentSection = ({ comments, newComment, setNewComment, onAdd, onDelete }) => (
-    <div className="mt-10 p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
-        <h3 className="text-2xl font-bold text-gray-800 flex items-center mb-5 border-b pb-3">
-            <MessageSquare className="w-6 h-6 mr-2 text-blue-500" /> 댓글 ({comments.length})
-        </h3>
-        <div className="flex mb-6 space-x-3">
-            <textarea 
-                className="flex-grow p-3 border border-gray-300 rounded-xl resize-none focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
-                rows="3" 
-                placeholder="따뜻한 의견을 남겨주세요." 
-                value={newComment} 
-                onChange={(e) => setNewComment(e.target.value)} 
-            />
-            <button 
-                onClick={onAdd} 
-                className="flex-shrink-0 bg-blue-600 text-white w-14 rounded-xl flex items-center justify-center hover:bg-blue-700 transition shadow-md"
-            >
-                <Send className="w-5 h-5" />
-            </button>
-        </div>
-        <div className="space-y-4">
-            {comments.length > 0 ? comments.map((comment) => (
-                <div key={comment.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="font-semibold text-gray-800">{comment.author}</span>
-                        <div className="flex items-center space-x-2">
-                            <span className="text-xs text-gray-500">{comment.date}</span>
-                            {/* 본인 댓글일 경우에만 노출해야 함 (추후 로직 추가) */}
-                            <button onClick={() => onDelete(comment.id)} className="text-gray-400 hover:text-red-500 transition">
-                                <XCircle className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                    <p className="text-gray-700 whitespace-pre-wrap">{comment.text}</p>
-                </div>
-            )) : (
-                <p className="text-center text-gray-400 py-4">첫 번째 댓글을 남겨보세요!</p>
-            )}
-        </div>
-    </div>
-);
+import CommentSection from '../components/board/CommentSection';
 
 const BoardDetail = () => {
     const { id } = useParams();
@@ -139,11 +98,14 @@ const BoardDetail = () => {
 
                 {/* 댓글 영역 */}
                 <CommentSection 
-                    comments={comments} 
-                    newComment={newComment} 
-                    setNewComment={setNewComment} 
-                    onAdd={handlers.handleAddComment} 
-                    onDelete={handlers.handleDeleteComment} 
+                    // [핵심 수정 1] URL에서 가져온 id를 boardNo라는 이름으로 넘겨줌
+                    boardNo={id} 
+                    
+                    // [핵심 수정 2] CommentSection은 'commentList'라는 이름을 원함
+                    commentList={comments} 
+                    
+                    // [핵심 수정 3] 데이터 갱신을 위해 새로고침 함수 전달 (임시로 페이지 리로드)
+                    onRefresh={() => window.location.reload()} 
                 />
             </main>
         </div>
