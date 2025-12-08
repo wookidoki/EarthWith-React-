@@ -26,7 +26,7 @@ const ErrorModal = ({ message, onClose }) => {
 
         {/* 에러 메시지 */}
         <div className="text-center space-y-4">
-          <p className="text-xl font-semibold text-red-600">Error</p>
+          
           <p className="text-gray-700 whitespace-pre-wrap">{message}</p>
         </div>
 
