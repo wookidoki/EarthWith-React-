@@ -6,7 +6,7 @@ const LocalEcoCard = ({ stats = [], loading, error }) => {
     const navigate = useNavigate();
 
     const memberCount = stats[0]?.number || "0"; 
-    const ecoActions = stats[1]?.number || "0"; 
+    const ecoActions = stats[3]?.number || "0"; 
 
     let statsContent;
 

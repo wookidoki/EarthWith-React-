@@ -48,6 +48,7 @@ const EcoMainPage = () => {
           loading={statsLoading}
           error={statsError}
         />
+
         <RankingWidget isLoggedIn={isLoggedIn} />
 
         <CalculatorWidget />
