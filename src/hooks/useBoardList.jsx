@@ -1,44 +1,68 @@
 import { useState, useEffect } from 'react';
-import { Sun, Car, ShoppingBag, Users, BookOpen, FileText } from 'lucide-react';
+import { 
+  Sun, Car, Coffee, ShoppingBag, 
+  Info, HeartHandshake, Megaphone, ShoppingCart, 
+  FileText, MoreHorizontal 
+} from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8081';
 
-// 카테고리 스타일 매퍼 (파일 내부 정의)
-export const getCategoryStyle = (categoryCode) => {
-  if (categoryCode?.startsWith('A1')) return { icon: Sun, color: 'text-orange-500', bg: 'bg-orange-100' };
-  if (categoryCode?.startsWith('A3')) return { icon: Car, color: 'text-blue-600', bg: 'bg-blue-100' };
-  if (categoryCode?.startsWith('A5')) return { icon: ShoppingBag, color: 'text-green-500', bg: 'bg-green-100' };
-  if (categoryCode?.startsWith('B2')) return { icon: Users, color: 'text-blue-500', bg: 'bg-blue-100' };
-  if (categoryCode?.startsWith('B1')) return { icon: BookOpen, color: 'text-indigo-500', bg: 'bg-indigo-100' };
-  return { icon: FileText, color: 'text-gray-500', bg: 'bg-gray-100' };
+// 카테고리 설정
+const CATEGORY_CONFIG = {
+  'A1': { name: '에너지', icon: Sun, color: 'text-orange-500', bg: 'bg-orange-100' },
+  'A2': { name: '자동차', icon: Car, color: 'text-blue-600', bg: 'bg-blue-100' },
+  'A3': { name: '일상생활', icon: Coffee, color: 'text-amber-600', bg: 'bg-amber-100' },
+  'A4': { name: '녹색소비', icon: ShoppingBag, color: 'text-green-600', bg: 'bg-green-100' },
+  'AN': { name: '기타', icon: MoreHorizontal, color: 'text-gray-500', bg: 'bg-gray-100' },
+  'B1': { name: '정보', icon: Info, color: 'text-indigo-500', bg: 'bg-indigo-100' },
+  'B2': { name: '봉사모집', icon: HeartHandshake, color: 'text-rose-500', bg: 'bg-rose-100' },
+  'B3': { name: '홍보', icon: Megaphone, color: 'text-purple-500', bg: 'bg-purple-100' },
+  'B4': { name: '공동구매', icon: ShoppingCart, color: 'text-teal-600', bg: 'bg-teal-100' },
+  'BN': { name: '기타', icon: MoreHorizontal, color: 'text-gray-500', bg: 'bg-gray-100' },
+  'DEFAULT': { name: '일반', icon: FileText, color: 'text-gray-500', bg: 'bg-gray-100' }
+};
+
+export const getCategoryStyle = (code) => {
+  return CATEGORY_CONFIG[code] || CATEGORY_CONFIG['DEFAULT'];
+};
+
+const resolveImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/')) return `${API_BASE_URL}${path}`;
+  return `${API_BASE_URL}/uploads/${path}`;
 };
 
 export const useBoardList = (pageFilter) => {
-  const [listPosts, setListPosts] = useState([]); // 일반 리스트
-  const [topPosts, setTopPosts] = useState([]);   // 상위 3개 (Bento)
-  const [pageInfo, setPageInfo] = useState(null); // 페이징 정보
+  const [listPosts, setListPosts] = useState([]);
+  const [topPosts, setTopPosts] = useState([]);
+  const [pageInfo, setPageInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [selectedCategoryCode, setSelectedCategoryCode] = useState('ALL'); 
 
-  // 데이터 변환 헬퍼 함수
   const transformData = (data) => {
     if (!data) return [];
     return data.map(item => {
-      const style = getCategoryStyle(item.boardCategory);
+      const config = getCategoryStyle(item.boardCategory);
+      
+      const safeImage = resolveImageUrl(item.attachmentPath) 
+        || `https://placehold.co/600x400/e2e8f0/1e293b?text=${encodeURIComponent(item.boardTitle?.substring(0,4))}`;
+
       return {
         id: item.boardNo,
         title: item.boardTitle,
-        category: item.boardCategory,
-        date: item.regDate, // 필요시 포맷팅 로직 추가
+        categoryCode: item.boardCategory,
+        categoryName: config.name, 
+        date: item.regDate,
         views: item.viewCount,
-        likeCount: item.likeCount,
-        icon: style.icon,
-        color: style.color,
-        // 이미지가 null일 경우 대비 및 placeholder 처리
-        img: `https://placehold.co/600x400/e2e8f0/1e293b?text=${encodeURIComponent(item.boardTitle ? item.boardTitle.substring(0,4) : 'No Image')}`
+        likeCount: item.likeCount || 0,
+        icon: config.icon,
+        color: config.color,
+        bg: config.bg,
+        img: safeImage
       };
     });
   };
@@ -47,13 +71,31 @@ export const useBoardList = (pageFilter) => {
     const fetchBoards = async () => {
       setLoading(true);
       try {
-        // 백엔드 컨트롤러에 page 파라미터 전달
-        const response = await fetch(`${API_BASE_URL}/boards?page=${currentPage}`);
-        if (!response.ok) throw new Error('데이터 로딩 실패');
+        // [수정 핵심] 값이 없으면 파라미터를 아예 보내지 않음
+        const params = new URLSearchParams();
+        params.append('page', currentPage);
+        
+        if (pageFilter) {
+            params.append('type', pageFilter);
+        }
+
+        if (selectedCategoryCode && selectedCategoryCode !== 'ALL' && selectedCategoryCode !== '') {
+            params.append('category', selectedCategoryCode);
+        }
+
+        if (searchTerm && searchTerm.trim() !== '') {
+            params.append('keyword', searchTerm);
+        }
+
+        const response = await fetch(`${API_BASE_URL}/boards?${params.toString()}`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`데이터 로딩 실패 (${response.status}): ${errorText}`);
+        }
         
         const data = await response.json();
         
-        // 백엔드에서 반환하는 Map 구조 { topPosts: [], list: [], pi: {} } 에 대응
         setTopPosts(transformData(data.topPosts));
         setListPosts(transformData(data.list));
         setPageInfo(data.pi);
@@ -66,26 +108,30 @@ export const useBoardList = (pageFilter) => {
     };
 
     fetchBoards();
-  }, [currentPage]); // 페이지 변경 시 재호출
+  }, [currentPage, pageFilter, selectedCategoryCode, searchTerm]);
 
-  // 클라이언트 사이드 필터링 (현재 페이지 내 데이터만 필터링됨)
-  // 검색 기능이 중요하다면 추후 서버 사이드 검색(?keyword=...)으로 변경 권장
-  const filteredListPosts = listPosts.filter(p => {
-    const matchCat = selectedCategory === '전체' || p.category === selectedCategory;
-    const matchSearch = !searchTerm || p.title.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const getCategoryList = () => {
+    const base = [{ code: 'ALL', name: '전체' }];
+    const targets = pageFilter === 'A' 
+      ? ['A1', 'A2', 'A3', 'A4', 'AN'] 
+      : ['B1', 'B2', 'B3', 'B4', 'BN'];
+
+    return base.concat(targets.map(code => ({
+      code: code,
+      name: CATEGORY_CONFIG[code].name
+    })));
+  };
 
   return { 
     topPosts, 
-    filteredListPosts, 
+    filteredListPosts: listPosts, 
     pageInfo, 
     loading, 
     searchTerm, 
     setSearchTerm, 
-    selectedCategory, 
-    setSelectedCategory,
-    setCurrentPage, 
-    uniqueCategories: ['전체', 'A1', 'A3', 'B1', 'B2'] // 필요한 카테고리 목록 정의
+    selectedCategoryCode, 
+    setSelectedCategoryCode,
+    categoryList: getCategoryList(),
+    setCurrentPage 
   };
 };

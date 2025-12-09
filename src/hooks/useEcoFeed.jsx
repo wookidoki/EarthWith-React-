@@ -3,6 +3,10 @@ import { useAuth } from '../context/AuthContext'; // AuthContext 경로 주의
 
 
 const PROFILE_BASE_URL = "http://localhost:8081";
+
+const DUMMY_FEED_IMAGE = '/dummy-feed.jpg';
+const DUMMY_PROFILE_IMAGE = '/dummy-profile.jpg';
+
 // 2) 프로필 이미지 URL 정리 함수
 const resolveProfileImageUrl = (raw) => {
   // 값이 없으면 default.jpg
@@ -43,15 +47,23 @@ export const useEcoFeed = () => {
       setLoading(true); // 요청 시작 -> 로딩 중 표시
       
       const params = new URLSearchParams();
-      params.append('limit', '3');
+      params.append('limit', '10');
 
       if (!isFirst && fetchOffset != null) {
         params.append('fetchOffset', fetchOffset.toString());
       }
 
-      const res = await fetch(`http://localhost:8081/feeds?${params.toString()}`, {
+      const url =
+        filter === 'popular'
+          ? `http://localhost:8081/feeds/popular?${params.toString()}`
+          : `http://localhost:8081/feeds?${params.toString()}`;
+      // const basePath = filter === 'popular' ? '/feeds/popular' : '/feeds'; // 인기글 필터 위함
+      const res = await fetch(url, {
         method: 'GET',
       });
+      // const res = await fetch(`http://localhost:8081/feeds?${params.toString()}`, {
+      //   method: 'GET',
+      // });
 
       if(!res.ok) {
         console.error('피드 불러오기 실패:', res.status);
@@ -76,14 +88,14 @@ export const useEcoFeed = () => {
   categoryText: post.categoryName || '',
 
   // 단일 이미지만 사용
-  imageUrl: post.attachmentPath || null,
+  imageUrl: post.attachmentPath ? DUMMY_FEED_IMAGE : null,
 
   author: post.memberId,
   regDate: post.regDate,
   region: post.regionName,
   regionNo: post.regionNo,
 
-  profileImage: resolveProfileImageUrl(post.memberImage),
+  profileImage: DUMMY_PROFILE_IMAGE,
 
   likes: post.likeCount ?? 0,
   comments: post.commentCount ?? 0,
@@ -131,14 +143,20 @@ export const useEcoFeed = () => {
       setLoading(false);
     }
   },
-  [loading, hasMore, fetchOffset]
+  [loading, hasMore, fetchOffset, filter]
  ); // try/catch/finally 구조로 네트워크 에러 처리
      // 어떤 경우든 마지막에 loading=false 로 돌려놓는다.
      // 여기까지가 fetchFeeds 함수 한 세트다.
      
      useEffect(() => {
-      fetchFeeds(true);
-     }, []);
+  setFeedData([]);
+  setFetchOffset(null);
+  setHasMore(true);
+  fetchFeeds(true);
+}, [filter]);
+    //  useEffect(() => {
+    //   fetchFeeds(true);
+    //  }, []);
      // 컴포넌트가 처음 렌더링 될 때 fetchFeeds(true) 호출 -> 첫 3개 글 로드
 
      useEffect(() => {
@@ -589,12 +607,13 @@ const handleCommentEditCancel = (postId) => {
 
   // 필터링된 데이터 반환
   const filteredFeed = feedData.filter(post => {
-    if (filter === 'popular') return Number(post.likes) >= 100;
+    // if (filter === 'popular') return Number(post.likes) >= 100;
     if (filter === 'recruit') return post.categoryCode === 'C2';
     return true;
   });
 
   return {
+    feedData,
     filteredFeed,
     filter,
     setFilter,

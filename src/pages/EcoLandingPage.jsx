@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Leaf, ChevronDown, ArrowRight, Globe, Users, TreePine, Wind, Sun, Award } from 'lucide-react';
-// 절대 경로로 Hook import
-import useClimateTime from '/src/hooks/useClimateTime.jsx';
 
-// [이미지 경로 수정]
-// 원본 파일이 없어서 에러가 나므로 임시 이미지로 대체했습니다.
-// 파일이 준비되면 아래 3줄 주석을 풀고, const ForestImg... 부분을 지우세요.
-// import ForestImg from "../assets/resources/img/forest.jpg";
-// import SeaImg from "../assets/resources/img/sea.jpg";
-// import SkyImg from "../assets/resources/img/sky.jpg";
-
+// 이미지 경로 (유지)
 const ForestImg = "https://placehold.co/1920x1080/105c28/ffffff?text=Forest";
 const SeaImg = "https://placehold.co/1920x1080/006994/ffffff?text=Sea";
 const SkyImg = "https://placehold.co/1920x1080/87CEEB/ffffff?text=Sky";
@@ -17,30 +9,20 @@ const SkyImg = "https://placehold.co/1920x1080/87CEEB/ffffff?text=Sky";
 const API_BASE_URL = 'http://localhost:8081';
 
 const EcoLandingPage = ({ onNavigate }) => {
-  const climateTime = useClimateTime(); 
+  // [수정] 기후시계 훅 제거됨
   const [scrollY, setScrollY] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isVisible, setIsVisible] = useState(true); // 기본값 true로 변경 (깜빡임 방지)
+  const [isVisible, setIsVisible] = useState(true); 
 
-  // [복구 완료] 백엔드 데이터와 연동되는 통계 상태
+  // [수정] 초기 상태값: SQL 쿼리 결과 4개에 맞춰 4칸 구성 (기후시계 제외)
   const [stats, setStats] = useState([
-    { number: "...", label: "1.5℃ 상승까지 남은 시간" },
-    { number: "...", label: "참여중인 환경 지킴이" },
-    { number: "89톤", label: "이번달 CO₂ 절감량" }, // 고정값
-    { number: "...", label: "진행중인 챌린지" }
+    { number: "...", label: "참여중인 환경 지킴이" },   // 1. memberCount
+    { number: "...", label: "진행중인 챌린지" },        // 2. totalPosts
+    { number: "...", label: "실천된 에코 액션" },       // 3. ecoActions (새로 추가하여 4칸 유지)
+    { number: "...", label: "지구를 살린 나무 효과" }   // 4. treeEffect
   ]);
-  
-  // 1. 기후 시계 실시간 업데이트 (Hook 값 연동)
-  useEffect(() => {
-      setStats(prevStats => [
-          { ...prevStats[0], number: climateTime },
-          prevStats[1],
-          prevStats[2],
-          prevStats[3]
-      ]);
-  }, [climateTime]);
 
-  // 2. 백엔드 API 호출 및 스크롤/슬라이더 이벤트
+  // 백엔드 API 호출 및 스크롤/슬라이더 이벤트
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
@@ -49,38 +31,42 @@ const EcoLandingPage = ({ onNavigate }) => {
       setCurrentSlide((prev) => (prev + 1) % 3);
     }, 4000);
 
-    // [복구 완료] 백엔드 API 호출 로직 (member-count, boards-join)
-    const fetchMemberCount = async () => {
+    // [API 호출]
+    const fetchLandingStats = async () => {
       try {
-        const [memberCountResponse, boardCountResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/stats/member-count`),
-          fetch(`${API_BASE_URL}/stats/boards-join`)
-        ]);
+        const response = await fetch(`${API_BASE_URL}/stats/landing`);
         
-        if (memberCountResponse.ok && boardCountResponse.ok) {
-            const memberCountData = await memberCountResponse.json();
-            const boardCountResponseData = await boardCountResponse.json();
-    
-            setStats(prevStats => [
-              prevStats[0],
-              { ...prevStats[1], number: memberCountData.memberCount?.toLocaleString() || "0" },
-              prevStats[2],
-              { ...prevStats[3], number: boardCountResponseData.boardParticipationCount?.toLocaleString() || "0" }
+        if (response.ok) {
+            const data = await response.json();
+            
+            // SQL 결과 4가지를 순서대로 매핑
+            setStats([
+              // 1. 회원 수
+              { number: (data.memberCount || 0).toLocaleString() + "명", label: "참여중인 환경 지킴이" },
+              
+              // 2. 게시글(챌린지) 수
+              { number: (data.totalPosts || 0).toLocaleString() + "개", label: "진행중인 챌린지" },
+              
+              // 3. 에코 액션 (게시글+댓글+좋아요 합계) -> 기후시계 자리에 대체
+              { number: (data.ecoActions || 0).toLocaleString() + "건", label: "실천된 에코 액션" },
+              
+              // 4. 나무 효과
+              { number: (data.treeEffect || 0).toLocaleString() + "그루", label: "지구를 살린 나무 효과" }
             ]);
         }
       } catch (error) {
-        console.error("백엔드 통신 에러 (서버 켜져있는지 확인 필요):", error);
-        // 에러 시 기본값 0 처리
-        setStats(prevStats => [
-           prevStats[0],
-           { ...prevStats[1], number: "0" }, 
-           prevStats[2],
-           {...prevStats[3], number: "0"}
+        console.error("백엔드 통신 에러:", error);
+        // 에러 시 0으로 초기화
+        setStats([
+           { number: "0명", label: "참여중인 환경 지킴이" }, 
+           { number: "0개", label: "진행중인 챌린지" },
+           { number: "0건", label: "실천된 에코 액션" },
+           { number: "0그루", label: "지구를 살린 나무 효과" }
          ]);
       }
     };
 
-    fetchMemberCount();
+    fetchLandingStats();
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -178,7 +164,7 @@ const EcoLandingPage = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* [복구 완료] 통계 섹션 (백엔드 데이터 stats 연동) */}
+      {/* 통계 섹션 (DB 연동됨, 기후시계 제거) */}
       <div className="relative z-30 bg-gradient-to-b from-black/60 to-black/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 py-24">
           <div className="text-center mb-16">
