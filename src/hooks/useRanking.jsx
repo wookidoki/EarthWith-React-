@@ -20,7 +20,7 @@ export const useRanking = (isLoggedIn) => {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/stats/member-rank-10`);
+        const response = await fetch(`${API_BASE_URL}/stats/ranking`);
         if (!response.ok) {
           throw new Error('랭킹 데이터를 불러오는데 실패했습니다.');
         }

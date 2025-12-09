@@ -35,7 +35,7 @@ const RankingWidget = ({ isLoggedIn }) => {
     </div>
   );
 
-  const PersonalRankSlide = () => {
+const PersonalRankSlide = () => {
     if (isLoading || error) return <LoadingOrError />;
     return (
       <div className="p-8 flex flex-col justify-between h-full relative">
@@ -43,9 +43,9 @@ const RankingWidget = ({ isLoggedIn }) => {
           <h3 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center"><Trophy className="w-6 h-6 mr-2 text-yellow-500" /> 개인 포인트 랭킹</h3>
           <div className="space-y-2 max-h-[260px] overflow-y-auto pr-2">
             {personalRankList.length > 0 ? personalRankList.map((item) => (
-              <div key={item.rank} className="flex items-center space-x-3 p-2 rounded-lg transition">
+              <div key={item.MEMBERID} className="flex items-center space-x-3 p-2 rounded-lg transition">
                 <span className="w-5 h-5 text-center font-bold">
-                  {item.rank <= 3 ? <Award className={`w-5 h-5 ${item.rank === 1 ? 'text-yellow-500' : item.rank === 2 ? 'text-gray-400' : 'text-orange-400'}`} /> : <span className='text-gray-500 text-sm'>{item.rank}</span>}
+                  {item.RANK <= 3 ? <Award className={`w-5 h-5 ${item.RANK === 1 ? 'text-yellow-500' : item.RANK === 2 ? 'text-gray-400' : 'text-orange-400'}`} /> : <span className='text-gray-500 text-sm'>{item.rank}</span>}
                 </span>
                 <span className="font-medium text-gray-700 truncate">{item.MEMBERID || '이름 없음'}</span>
                 <span className="ml-auto text-sm text-gray-500">{item.MEMBERPOINT || 0} P</span>
