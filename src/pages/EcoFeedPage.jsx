@@ -40,6 +40,8 @@ const EcoFeedPage = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+
+        // 필요한 카테고리 코드 (예: 참여모집이 C2라면 C2 사용)
         const todayParticipantsCategory = 'C2';
         const todayPostCategory = 'C%';
 
@@ -410,6 +412,96 @@ const EcoFeedPage = () => {
       {loading && (
         <div className="text-center py-6"><div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div></div>
       )}
+
+      {reportModal.open && (
+  <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-white shadow-xl rounded-2xl p-6 w-[360px] max-w-[90%] animate-fadeIn">
+      <h2 className="text-lg font-bold text-gray-800 mb-3 text-center">
+        게시글 신고하기
+      </h2>
+
+      {/* 신고 사유 선택 */}
+      <div className="mb-4">
+        <p className="text-sm font-semibold text-gray-700 mb-2">신고 사유</p>
+        <div className="space-y-2 max-h-40 overflow-y-auto">
+          {REPORT_REASONS.map((reason) => (
+            <label
+              key={reason.id}
+              className={`flex items-center justify-between p-2 border rounded-lg cursor-pointer text-sm
+                ${
+                  reportReason === reason.id
+                    ? 'border-red-400 bg-red-50 text-red-600'
+                    : 'border-gray-200 hover:border-red-300 hover:bg-red-50'
+                }`}
+            >
+              <span>{reason.label}</span>
+              <input
+                type="radio"
+                name="reportReason"
+                value={reason.id}
+                checked={reportReason === reason.id}
+                onChange={() => setReportReason(reason.id)}
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* 신고 내용 입력 */}
+      <div className="mb-4">
+        <p className="text-sm font-semibold text-gray-700 mb-2">신고 내용</p>
+        <textarea
+          value={reportContent}
+          onChange={(e) => setReportContent(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 min-h-[80px]"
+          placeholder="신고 사유에 대해 구체적으로 적어주세요."
+        />
+      </div>
+
+      {/* 버튼 영역 */}
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={() => {
+            setReportModal({ open: false, postId: null });
+            setReportReason(null);
+            setReportContent('');
+          }}
+          className="px-4 py-2 bg-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gray-300 transition w-1/2 mr-2"
+        >
+          취소
+        </button>
+
+        <button
+          onClick={async () => {
+            if (!reportReason) {
+              alert('신고 사유를 선택해주세요.');
+              return;
+            }
+            if (!reportContent.trim()) {
+              alert('신고 내용을 입력해주세요.');
+              return;
+            }
+
+            await handleReportSubmit(
+              reportModal.postId,
+              reportReason,
+              reportContent
+            );
+
+            setReportModal({ open: false, postId: null });
+            setReportReason(null);
+            setReportContent('');
+          }}
+          className="px-4 py-2 bg-red-600 rounded-lg text-white font-medium hover:bg-red-700 transition w-1/2 ml-2"
+        >
+          신고하기
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
 
       {/* 모든 모달들... (기존 코드와 동일) */}
       {/* 댓글 삭제, 게시글 삭제, 신고, 댓글 신고 모달은 기존 코드 그대로 사용 */}

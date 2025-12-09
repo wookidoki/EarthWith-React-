@@ -6,13 +6,30 @@ import { getCategoryStyle } from './useBoardList'; // 이 import는 외부 파�
 const API_BASE_URL = 'http://localhost:8081';
 const PROFILE_BASE_URL = "http://localhost:8081";
 
-// [헬퍼 함수] 프로필 이미지 URL 처리 헬퍼
-const resolveProfileImageUrl = (raw) => {
-    if (!raw) return `${PROFILE_BASE_URL}/uploads/default_profile.jpg`;
-    if (raw.startsWith('http')) return raw;
-    if (raw.startsWith('/')) return `${PROFILE_BASE_URL}${raw}`;
-    return `${PROFILE_BASE_URL}/uploads/${raw}`;
+const DUMMY_POST_IMAGE =
+  "https://en.pimg.jp/115/020/938/1/115020938.jpg?utm_source=chatgpt.com";
+  // ✅ 프로필 더미 이미지 (탄소중립 / 공공 느낌)
+const DUMMY_PROFILE_IMAGE =
+  "https://img.pikbest.com/png-images/20250228/user-profile-vector-flat-illustration-avatar-person-icon-gender-neutral-silhouette_11563975.png%21sw800?utm_source=chatgpt.com";
+
+
+// ✅ 상세페이지용 더미 이미지 resolver (임시)
+const resolvePostImageUrl = () => {
+  return DUMMY_POST_IMAGE;
 };
+
+
+// [헬퍼 함수] 프로필 이미지 URL 처리 헬퍼
+// const resolveProfileImageUrl = (raw) => {
+//     if (!raw) return `${PROFILE_BASE_URL}/uploads/default_profile.jpg`;
+//     if (raw.startsWith('http')) return raw;
+//     if (raw.startsWith('/')) return `${PROFILE_BASE_URL}${raw}`;
+//     return `${PROFILE_BASE_URL}/uploads/${raw}`;
+// };
+const resolveProfileImageUrl = () => {
+  return DUMMY_PROFILE_IMAGE;
+};
+
 
 
 export const useBoardDetail = (id) => {
@@ -76,9 +93,12 @@ export const useBoardDetail = (id) => {
                 author: data.memberName,
                 boardWriter: data.boardWriter,
                 memberImage: resolveProfileImageUrl(data.memberImage),
+               
                 views: data.viewCount,
                 date: data.regDate,
-                img: data.attachmentPath || null,
+                // img: data.attachmentPath || null,
+                img: resolvePostImageUrl(data.attachmentPath),
+           
                 likes: data.likeCount ?? 0,
                 isLiked: typeof data.isLiked === 'boolean' ? data.isLiked : !!data.liked,
                 isBookmarked: data.bookmarked ?? false,

@@ -21,7 +21,7 @@ export const useMainPage = () => {
         const fetchMainPageData = async () => {
             setStatsLoading(true);
             try {
-                const response = await fetch(`${API_BASE_URL}/stats/mainpage`); 
+                const response = await fetch(`${API_BASE_URL}/stats/landing`); 
                 if (!response.ok) throw new Error('서버 통신 실패: 통계');
                 const data = await response.json();
                 
