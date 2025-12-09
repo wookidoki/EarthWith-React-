@@ -111,11 +111,6 @@ export const useEcoFeed = () => {
   editingCommentId: null,
 })); // 서버에서 온 각 게시글에 isLiked, isCommentOpen, commentsList, newCommentText 같은
               // 프론트 전용 필드를 붙여준다.
-
-              console.log('✅ processed 결과:', processed.map(p => ({
-  id: p.id,
-  likes: p.likes,
-})));
     
       setFeedData(prev => {
         if (isFirst) return processed;

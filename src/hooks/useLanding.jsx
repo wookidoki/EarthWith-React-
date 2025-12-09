@@ -1,25 +1,18 @@
 import { useState, useEffect } from 'react';
-// [중요] 절대 경로로 수정됨
-import useClimateTime from '/src/hooks/useClimateTime.jsx';
 
 const API_BASE_URL = 'http://localhost:8081';
 
 export const useLanding = () => {
-  const climateTime = useClimateTime();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [scrollY, setScrollY] = useState(0);
 
-  const [stats, setStats] = useState([a
-    { number: "...", label: "1.5℃ 상승까지 남은 시간" },
-    { number: "...", label: "참여중인 환경 지킴이" },
-    { number: "89톤", label: "이번달 CO₂ 절감량" },
-    { number: "...", label: "진행중인 챌린지" }
+  const [stats, setStats] = useState([
+    { number: "0", label: "함께하는 환경 지킴이" },   // 1. 회원 수
+    { number: "0", label: "누적된 챌린지 기록" },     // 2. 게시글 수
+    { number: "0", label: "실천된 에코 액션" },       // 3. 액션 합계
+    { number: "0", label: "우리가 심은 나무 효과" }   // 4. 나무 환산
   ]);
-
-  useEffect(() => {
-    setStats(prev => [{ ...prev[0], number: climateTime }, prev[1], prev[2], prev[3]]);
-  }, [climateTime]);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -29,26 +22,26 @@ export const useLanding = () => {
 
     const fetchStats = async () => {
       try {
-        const [resMembers, resBoards] = await Promise.all([
-          fetch(`${API_BASE_URL}/stats/member-count`),
-          fetch(`${API_BASE_URL}/stats/boards-join`)
-        ]);
+        const response = await fetch(`${API_BASE_URL}/stats/landing`);
+        if (!response.ok) throw new Error('서버 통신 실패');
         
-        const memberData = await resMembers.json();
-        const boardData = await resBoards.json();
+        const data = await response.json();
 
-        setStats(prev => [
-           prev[0],
-           { ...prev[1], number: memberData.memberCount?.toLocaleString() || "0" }, 
-           prev[2],
-           { ...prev[3], number: boardData.boardParticipationCount?.toLocaleString() || "0" }
-         ]);
+        setStats([
+          { number: data.memberCount?.toLocaleString() || "0", label: "함께하는 환경 지킴이" },
+          { number: data.totalPosts?.toLocaleString() || "0", label: "누적된 챌린지 기록" },
+          { number: data.ecoActions?.toLocaleString() || "0", label: "실천된 에코 액션" },
+          { number: (data.treeEffect?.toLocaleString() || "0") + "그루", label: "우리가 심은 나무 효과" }
+        ]);
+
       } catch (e) {
-        console.error("통계 로드 실패 (서버 꺼짐 등):", e);
+        console.error("통계 로드 실패:", e);
       }
     };
+    
     fetchStats();
 
+    // 클린업
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearInterval(sliderTimer);
@@ -57,3 +50,5 @@ export const useLanding = () => {
 
   return { scrollY, currentSlide, setCurrentSlide, isVisible, stats };
 };
+
+export default useLanding;

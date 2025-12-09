@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import ErrorModal from "../admin/ErrorModal";
-import MemberManagement from "./MemberManagement";   // 🔥 회원관리 추가
+import MemberManagement from "./MemberManagement";
 
 const ITEMS_PER_PAGE = 5;
 const API_BASE = "http://localhost:8081/admin";
@@ -106,7 +106,7 @@ const ItemTable = ({ items, currentPage, setCurrentPage, totalPages, onRowClick 
 /* =======================================================================
    📌 상세 모달
 ======================================================================= */
-const ItemDetailModal = ({ item, onClose, onActionComplete }) => {
+const ItemDetailModal = ({ item, onClose, onActionComplete, onError }) => {
   if (!item) return null;
 
   const accessToken = localStorage.getItem("accessToken");
@@ -125,7 +125,7 @@ const ItemDetailModal = ({ item, onClose, onActionComplete }) => {
       onClose();
     } catch (e) {
       const msg = e.response?.data?.message || "처리 중 오류가 발생했습니다.";
-      alert(msg);
+      onError?.(msg);   // 💥 alert → ErrorModal로 전달
     }
   };
 
@@ -175,11 +175,13 @@ const ItemDetailModal = ({ item, onClose, onActionComplete }) => {
             <p><strong>제목:</strong> {board.boardTitle}</p>
             <p><strong>작성자:</strong> {board.memberId}</p>
             <p><strong>작성일:</strong> {board.regDate}</p>
-            <p><strong>상태:</strong> {board.status === "Y" ? (
-                  <span className="text-green-600 font-bold">활성</span>
-                ) : (
-                  <span className="text-red-500 font-bold">삭제됨</span>
-                )}</p>
+            <p><strong>상태:</strong>
+              {board.status === "Y" ? (
+                <span className="text-green-600 font-bold">활성</span>
+              ) : (
+                <span className="text-red-500 font-bold">삭제됨</span>
+              )}
+            </p>
             <p><strong>신고 수:</strong> {board.boardReportCount}</p>
 
             <div>
@@ -214,12 +216,14 @@ const ItemDetailModal = ({ item, onClose, onActionComplete }) => {
               >
                 신고확인
               </button>
+
               <button
                 onClick={handleDelete}
                 className="bg-red-500 text-white py-2 px-4 rounded-lg"
               >
                 삭제하기
               </button>
+
               <button
                 onClick={handleRestore}
                 className="bg-blue-500 text-white py-2 px-4 rounded-lg"
@@ -259,11 +263,13 @@ const ItemDetailModal = ({ item, onClose, onActionComplete }) => {
           <p><strong>번호:</strong> {comment.commentNo}</p>
           <p><strong>작성자:</strong> {comment.memberId}</p>
           <p><strong>작성일:</strong> {comment.regDate}</p>
-          <p><strong>상태:</strong> {comment.status === "Y" ? (
-                  <span className="text-green-600 font-bold">활성</span>
-                ) : (
-                  <span className="text-red-500 font-bold">삭제됨</span>
-                )}</p>
+          <p><strong>상태:</strong>
+            {comment.status === "Y" ? (
+              <span className="text-green-600 font-bold">활성</span>
+            ) : (
+              <span className="text-red-500 font-bold">삭제됨</span>
+            )}
+          </p>
           <p><strong>신고 수:</strong> {comment.commentReportCount}</p>
 
           <div>
@@ -282,12 +288,14 @@ const ItemDetailModal = ({ item, onClose, onActionComplete }) => {
             >
               신고확인
             </button>
+
             <button
               onClick={handleDelete}
               className="bg-red-500 text-white py-2 px-4 rounded-lg"
             >
               삭제하기
             </button>
+
             <button
               onClick={handleRestore}
               className="bg-blue-500 text-white py-2 px-4 rounded-lg"
@@ -346,7 +354,7 @@ const BoardManagementPage = () => {
       setItems(content || []);
       setTotalPages(Math.max(1, Math.ceil((totalCount || 0) / ITEMS_PER_PAGE)));
     } catch (e) {
-      const msg = e.response?.data?.error-message || "데이터 조회 중 오류가 발생했습니다.";
+      const msg = e.response?.data?.message || "데이터 조회 중 오류가 발생했습니다.";
       setErrorMessage(msg);
       setItems([]);
     }
@@ -377,7 +385,7 @@ const BoardManagementPage = () => {
         });
       }
     } catch (e) {
-      const msg = e.response?.data?.error-message || "상세 조회 중 오류가 발생했습니다.";
+      const msg = e.response?.data?.message || "상세 조회 중 오류가 발생했습니다.";
       setErrorMessage(msg);
     }
   };
@@ -396,55 +404,52 @@ const BoardManagementPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="w-full max-w-7xl mx-auto space-y-12 py-10">
-        
+
+        {/* 제목 */}
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 border-l-4 border-emerald-500 pl-4 flex items-center">
             <List className="w-7 h-7 mr-2 text-emerald-500" /> 게시글 및 댓글 관리
           </h1>
         </header>
 
-        {/* 필터 */}
+        {/* 필터 섹션 */}
         <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               onClick={() => setSelectedType("POST_ALL")}
-              className={`py-2 px-4 rounded-lg font-semibold transition ${
-                selectedType === "POST_ALL" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-700"
-              }`}
+              className={`py-2 px-4 rounded-lg font-semibold transition ${selectedType === "POST_ALL" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-700"
+                }`}
             >
               게시글 전체조회
             </button>
 
             <button
               onClick={() => setSelectedType("POST_REPORTED")}
-              className={`py-2 px-4 rounded-lg font-semibold transition ${
-                selectedType === "POST_REPORTED" ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"
-              }`}
+              className={`py-2 px-4 rounded-lg font-semibold transition ${selectedType === "POST_REPORTED" ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"
+                }`}
             >
               신고된 게시글 조회
             </button>
 
             <button
               onClick={() => setSelectedType("REVIEW_ALL")}
-              className={`py-2 px-4 rounded-lg font-semibold transition ${
-                selectedType === "REVIEW_ALL" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-700"
-              }`}
+              className={`py-2 px-4 rounded-lg font-semibold transition ${selectedType === "REVIEW_ALL" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-700"
+                }`}
             >
               댓글 전체조회
             </button>
 
             <button
               onClick={() => setSelectedType("REVIEW_REPORTED")}
-              className={`py-2 px-4 rounded-lg font-semibold transition ${
-                selectedType === "REVIEW_REPORTED" ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"
-              }`}
+              className={`py-2 px-4 rounded-lg font-semibold transition ${selectedType === "REVIEW_REPORTED" ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"
+                }`}
             >
               신고된 댓글 조회
             </button>
           </div>
         </section>
 
-        {/* 리스트 */}
+        {/* 리스트 섹션 */}
         <section>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             {selectedType === "POST_ALL" && "게시글 전체 목록"}
@@ -467,13 +472,13 @@ const BoardManagementPage = () => {
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
           onActionComplete={() => fetchData(currentPage)}
+          onError={(msg) => setErrorMessage(msg)}   // ErrorModal로 에러 전달
         />
 
         {/* 에러 모달 */}
         <ErrorModal message={errorMessage} onClose={() => setErrorMessage(null)} />
 
-
-        {/* 🔥🔥 여기서부터 회원관리 영역 추가 🔥🔥 */}
+        {/* 회원관리 */}
         <section className="mt-20">
           <h2 className="text-3xl font-bold text-gray-800 border-l-4 border-blue-500 pl-4 flex items-center mb-6">
             <Users className="w-7 h-7 mr-2 text-blue-500" /> 회원 관리
