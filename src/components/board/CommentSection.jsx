@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useComment } from '../../hooks/useComment';
 
+// 댓글 작성일자 출력 방식
+const formatDate = (dateString) => {
+  const d = new Date(dateString);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+
+  return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
+};
+
 // 신고 카테고리 상수
 const REPORT_CATEGORIES = [
     { no: 1, name: "부적절한 내용" },
@@ -94,6 +107,7 @@ const CommentSection = ({ boardNo, commentList, onRefresh }) => {
             {/* 댓글 리스트 */}
             <div className="comment-list">
                 {commentList && commentList.map((comment) => {
+                    
                     // 권한 체크: 본인 이거나 관리자
                     const isOwner = auth.isAuthenticated && (Number(auth.memberNo) === Number(comment.refMno));
                     const isAdmin = auth.role === 'ROLE_ADMIN';
@@ -104,7 +118,8 @@ const CommentSection = ({ boardNo, commentList, onRefresh }) => {
                         <div key={comment.commentNo} style={{ borderBottom: '1px solid #eee', padding: '15px 0' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                                 <strong>{comment.memberName || "익명"}</strong>
-                                <span style={{ fontSize: '12px', color: '#888' }}>{comment.regDate}</span>
+                                <span style={{ fontSize: '12px', color: '#888' }}>{formatDate(comment.regDate)}</span>
+
                             </div>
 
                             {/* 수정 모드 vs 일반 모드 */}

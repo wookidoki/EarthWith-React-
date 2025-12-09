@@ -25,8 +25,11 @@ export const useComment = () => {
     }
     setLoading(true);
     try {
-      await axios.post(`${API_BASE_URL}/comments/board/${boardNo}`, 
-        { commentContent: content }, 
+      await axios.post(`${API_BASE_URL}/comments`, 
+        { 
+          refBno: Number(boardNo),
+          commentContent: content 
+        }, 
         { headers: getHeaders() }
       );
       return true;

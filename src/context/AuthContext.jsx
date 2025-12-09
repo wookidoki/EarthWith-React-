@@ -4,7 +4,7 @@ import axios from "axios";
 
 export const AuthContext = createContext();
 
-const API_BASE_URL = 'http://localhost:8081'; // 주소 상수화
+const API_BASE_URL = 'http://localhost:8081';
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,77 +28,99 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: false
   });
 
-  // [유지] 새로고침 시 로컬 스토리지 체크 및 로그인 상태 복구
+  // 앱 시작 시 로컬 스토리지에서 정보 복원
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken");
+    const storedMemberNo = localStorage.getItem("memberNo");
     
-    if (storedToken) {
-      const storedMemberId = localStorage.getItem("memberId");
-      const storedRole = localStorage.getItem("role");
-      const storedMemberNo = localStorage.getItem("memberNo");
-      const storedMemberName = localStorage.getItem("memberName");
-      const storedMemberPoint = localStorage.getItem("memberPoint");
-      
-      setAuth(prev => ({
-        ...prev,
+    if (storedToken && storedMemberNo) {
+      // 1. Auth 상태 복원
+      setAuth({
+        memberNo: storedMemberNo,
+        role: localStorage.getItem("role"),
+        memberImage: localStorage.getItem("memberImage"),
+        phone: localStorage.getItem("phone"),
+        refRno: localStorage.getItem("refRno"),
+        memberName: localStorage.getItem("memberName"),
         accessToken: storedToken,
-        memberId: storedMemberId,
-        role: storedRole,
-        memberNo: storedMemberNo,
-        memberName: storedMemberName,
-        memberPoint: storedMemberPoint,
+        enrollDate: localStorage.getItem("enrollDate"),
+        email: localStorage.getItem("email"),
+        refreshToken: localStorage.getItem("refreshToken"),
+        memberId: localStorage.getItem("memberId"),
+        memberPoint: localStorage.getItem("memberPoint"),
         isAuthenticated: true
-      }));
-
-      setIsLoggedIn(true);
-      setIsAdmin(storedRole === 'ROLE_ADMIN');
-      
-      setCurrentUser({
-        memberId: storedMemberId,
-        memberName: storedMemberName,
-        role: storedRole,
-        memberNo: storedMemberNo,
-        memberPoint: storedMemberPoint
       });
+
+      // 2. CurrentUser 상태 복원
+      setCurrentUser({
+        memberNo: storedMemberNo,
+        memberName: localStorage.getItem('memberName'),
+        email: localStorage.getItem('email'),
+        phone: localStorage.getItem('phone'),
+        memberPoint: localStorage.getItem('memberPoint'),
+        memberImage: localStorage.getItem('memberImage'),
+        enrollDate: localStorage.getItem('enrollDate'),
+        role: localStorage.getItem('role')
+      });
+
+      // 3. 로그인 및 관리자 상태 복원
+      setIsLoggedIn(true);
+      setIsAdmin(localStorage.getItem("role") === 'ROLE_ADMIN');
       
-      // Axios 기본 헤더 설정 추가 (새로고침 후에도 유지되도록)
+      // 4. Axios 기본 헤더 설정 (새로고침 시 유지)
       axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
     }
   }, []); 
 
-  // [유지] 로컬 로그인 처리
-  const login = (memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint) => {
+  // 로그인 처리
+  const login = (
+    memberNo, role, memberImage, phone, refRno,
+    memberName, accessToken, enrollDate, email,
+    refreshToken, memberId, memberPoint
+  ) => {
+    
+    // Auth 객체 생성
     const userObj = {
       memberNo, role, memberImage, phone, refRno, memberName, accessToken, enrollDate, email, refreshToken, memberId, memberPoint,
       isAuthenticated: true,
     };
 
+    // 상태 업데이트
     setAuth(userObj);
     setIsLoggedIn(true);
     setIsAdmin(role === 'ROLE_ADMIN'); 
-    setCurrentUser(userObj);
+    
+    // Header UI용 CurrentUser 업데이트
+    setCurrentUser({
+      memberNo, memberId, memberName, role, memberPoint, email, phone, memberImage, enrollDate
+    });
 
+    // 로컬 스토리지 저장
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("memberId", memberId);
     localStorage.setItem("role", role);
     localStorage.setItem("memberNo", memberNo);
     localStorage.setItem("memberName", memberName);
+    localStorage.setItem("email", email);
+    localStorage.setItem("phone", phone);
     localStorage.setItem("memberPoint", memberPoint);
+    localStorage.setItem("enrollDate", enrollDate);
+    localStorage.setItem("memberImage", memberImage || "");
+    localStorage.setItem("refRno", refRno || "");
 
-    // 로그인 직후 헤더 설정
+    // Axios 헤더 설정
     axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
   };
 
-  // [수정] 로그아웃 처리 (헤더 추가 및 에러 처리 강화)
+  // 로그아웃 처리
   const logout = async () => {
     const logoutId = localStorage.getItem("memberId");
     const logoutToken = localStorage.getItem("refreshToken");
-    const accessToken = localStorage.getItem("accessToken"); // 헤더용 토큰
+    const accessToken = localStorage.getItem("accessToken");
 
     try {
       if (logoutId && logoutToken) {
-        // 백엔드 MemberLogoutDTO 필드에 맞춰 데이터 전송
         await axios.post(`${API_BASE_URL}/auth/logout`, 
           {
             memberId: logoutId,
@@ -106,7 +128,6 @@ export const AuthProvider = ({ children }) => {
           },
           {
             headers: {
-              // 백엔드 필터 통과를 위해 토큰 헤더 추가
               'Authorization': `Bearer ${accessToken}`, 
               'Content-Type': 'application/json'
             }
@@ -115,22 +136,27 @@ export const AuthProvider = ({ children }) => {
         console.log("서버 로그아웃 성공");
       }
     } catch (error) {
-      console.error("서버 로그아웃 오류 (무시하고 진행):", error);
+      console.error("서버 로그아웃 오류 (클라이언트 초기화 진행):", error);
     } finally {
-      // 서버 응답과 관계없이 클라이언트 상태는 무조건 초기화
-      setAuth({ isAuthenticated: false });
+      // 서버 응답과 관계없이 클라이언트 상태 초기화
+      setAuth({ 
+        memberNo: null, role: null, memberImage: null, phone: null, refRno: null,
+        memberName: null, accessToken: null, enrollDate: null, email: null,
+        refreshToken: null, memberId: null, memberPoint: null, isAuthenticated: false 
+      });
+      
       setIsLoggedIn(false);
       setIsAdmin(false);
       setCurrentUser(null);
       
       localStorage.clear();
-      delete axios.defaults.headers.common['Authorization']; // 헤더 삭제
+      delete axios.defaults.headers.common['Authorization']; 
       
       navigate("/main");
     }
   };
 
-  // [유지] 임시 핸들러
+  // 테스트용 간편 로그인 핸들러
   const handleLogin = (userData) => {
     setIsLoggedIn(true);
     setCurrentUser(userData);
@@ -145,8 +171,14 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ 
-      isLoggedIn, isAdmin, currentUser, auth, 
-      login, logout, handleLogin, handleAdminLogin 
+      isLoggedIn, 
+      isAdmin, 
+      currentUser, 
+      auth, 
+      login, 
+      logout, 
+      handleLogin, 
+      handleAdminLogin 
     }}>
       {children}
     </AuthContext.Provider>
