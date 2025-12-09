@@ -3,6 +3,10 @@ import { useAuth } from '../context/AuthContext'; // AuthContext 경로 주의
 
 
 const PROFILE_BASE_URL = "http://localhost:8081";
+
+const DUMMY_FEED_IMAGE = '/dummy-feed.jpg';
+const DUMMY_PROFILE_IMAGE = '/dummy-profile.jpg';
+
 // 2) 프로필 이미지 URL 정리 함수
 const resolveProfileImageUrl = (raw) => {
   // 값이 없으면 default.jpg
@@ -84,14 +88,14 @@ export const useEcoFeed = () => {
   categoryText: post.categoryName || '',
 
   // 단일 이미지만 사용
-  imageUrl: post.attachmentPath || null,
+  imageUrl: post.attachmentPath ? DUMMY_FEED_IMAGE : null,
 
   author: post.memberId,
   regDate: post.regDate,
   region: post.regionName,
   regionNo: post.regionNo,
 
-  profileImage: resolveProfileImageUrl(post.memberImage),
+  profileImage: DUMMY_PROFILE_IMAGE,
 
   likes: post.likeCount ?? 0,
   comments: post.commentCount ?? 0,

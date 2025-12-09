@@ -10,9 +10,22 @@ import RankingWidget from '../components/dashboard/RankingWidget'; 
 import AdminToolsSection from '../components/dashboard/AdminToolsSection'; 
 
 
+
 const EcoMainPage = () => {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate(); 
+
+// 초보자 가이드 버튼
+const handleGuideClick = (id) => {
+  navigate(`/board-detail/${id}`);
+}
+
+// 초보자 가이드
+const guideList = [
+  { title: '탄소중립포인트란?', id: 145 },
+  { title: '포인트 가입 및 인증 방법', id: 146 },
+  { title: '포인트 사용처 안내', id: 147 },
+];
   
   const { 
     listNews, newsLoading, newsError, 
@@ -58,12 +71,17 @@ const EcoMainPage = () => {
           </div>
           <h3 className="text-2xl font-semibold text-gray-900 mb-4">초보자 가이드</h3>
           <div className="space-y-3">
-            {['탄소중립포인트란?', '포인트 가입 및 인증 방법', '포인트 사용처 안내'].map((text, idx) => (
-              <button key={idx} className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-700 font-medium text-sm transition-colors flex justify-between items-center">
-                <span>{idx + 1}. {text}</span> <ChevronRight className="w-4 h-4" />
-              </button>
-            ))}
-          </div>
+          {guideList.map((guide, idx) => (
+            <button
+              key={guide.id}
+              onClick={() => handleGuideClick(guide.id)}
+              className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-700 font-medium text-sm transition-colors flex justify-between items-center"
+            >
+              <span>{idx + 1}. {guide.title}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          ))}
+        </div>
         </div>
 
         <div className="col-span-7 md:col-span-5 bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-500">
